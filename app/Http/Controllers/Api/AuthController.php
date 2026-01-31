@@ -17,9 +17,10 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User profile',
-            'user' => auth::user(),
+            'user' => auth('api')->user(),
         ]);
     }
+    
     
     /**
      * Register new user
@@ -27,7 +28,6 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            // Require at least one: email OR phone
             'email' => 'nullable|email|unique:users|required_without:phone',
             'phone' => 'nullable|unique:users|required_without:email',
             'password' => 'required|min:6|confirmed',
@@ -90,22 +90,22 @@ class AuthController extends Controller
         ]);
     }
 
-        public function refresh()
+    public function refresh()
     {
         try {
-            $newToken = auth::refresh();
-
+            $newToken = auth('api')->refresh();
+    
             return response()->json([
                 'token' => $newToken,
-                'user' => auth::user()
+                'user' => auth('api')->setToken($newToken)->user(),
+                'refresh_ttl' => (int) env('JWT_REFRESH_TTL', 20160),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
-                'error' => 'Token cannot be refreshed'
+                'message' => 'Token cannot be refreshed',
             ], 401);
         }
     }
-
     
     /**
      * Logout

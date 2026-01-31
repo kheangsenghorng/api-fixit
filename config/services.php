@@ -34,5 +34,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'aba' => [
+        'merchant_id' => env('ABA_MERCHANT_ID'),
+        'api_key' => env('ABA_API_KEY'),
+        'purchase_url' => env('ABA_PURCHASE_URL'),
+        'check_url' => env('ABA_CHECK_TRANSACTION_URL'),
+    ],
+
 
 ];

@@ -1,11 +1,13 @@
 <?php
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+
 
 return [
-    'api' => [
-        \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        'throttle:api',
-        \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        
-    ],
+   'api' => [
+    EnsureFrontendRequestsAreStateful::class,
+    'throttle:api',
+    \Illuminate\Routing\Middleware\SubstituteBindings::class,
+],
+
    
 ];
