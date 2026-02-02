@@ -21,11 +21,15 @@ class AuthController extends Controller
         ]);
     }
     
-    
     /**
      * Register new user
      */public function register(Request $request)
     {
+        if ($request->phone) {
+            $request->merge([
+                'phone' => formatPhoneNumber($request->phone),
+            ]);
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:users|required_without:phone',
@@ -34,24 +38,25 @@ class AuthController extends Controller
             'role' => 'in:customer,provider'
         ]);
 
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => $request->phone, // 👈 now always +855...
             'role' => $request->role ?? 'customer',
-            'is_active' => true,
+            'is_active' => false,
             'password' => Hash::make($request->password),
         ]);
-
         // Generate JWT
         $token = JWTAuth::fromUser($user);
 
         return response()->json([
             'success' => true,
-            'message' => 'Registered successfully',
-            'token' => $token,
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => $user,
-        ], 201);
+        ]);
     } 
         /**
      * Login user
@@ -59,50 +64,80 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'login' => 'required',
-            'password' => 'required'
+            'login' => 'required|string',
+            'password' => 'required|string',
         ]);
-
-        $loginType = filter_var($request->login, FILTER_VALIDATE_EMAIL)
-        ? 'email'
-        : 'phone';
     
-        $credentials = [
-            $loginType => $request->login,
-            'password' => $request->password
-        ];
+        $isEmail = filter_var($request->login, FILTER_VALIDATE_EMAIL);
     
-        // Attempt JWT login
-        if (!$token = JWTAuth::attempt($credentials)) {
-            return response()->json(['error' => 'Invalid credentials'], 401);
+        if ($isEmail) {
+            $field = 'email';
+            $value = $request->login;
+        } else {
+            $field = 'phone';
+            $value = formatPhoneNumber($request->login); // 👈 normalize to +855
         }
     
-        $user = auth::user();
+        $credentials = [
+            $field => $value,
+            'password' => $request->password,
+        ];
     
-        if (!$user->is_active) {
-            return response()->json(['message' => 'Account disabled'], 403);
+        if (! $token = auth('api')->attempt($credentials)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials',
+            ], 401);
+        }
+    
+        $user = auth('api')->user();
+    
+        // Block inactive users
+        if (! $user->is_active) {
+            auth('api')->logout(true);
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Account disabled',
+            ], 403);
         }
     
         return response()->json([
-            'message' => 'Login successful',
-            'token' => $token,
-            'user' => $user
+            'success' => true,
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'user' => $user,
         ]);
     }
+    
+    
 
     public function refresh()
     {
         try {
-            $newToken = auth('api')->refresh();
+            $token = auth('api')->refresh(true, true);
     
             return response()->json([
-                'token' => $newToken,
-                'user' => auth('api')->setToken($newToken)->user(),
-                'refresh_ttl' => (int) env('JWT_REFRESH_TTL', 20160),
+                'success' => true,
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => auth('api')->factory()->getTTL() * 60,
+                'user' => auth('api')->user(),
             ]);
-        } catch (\Throwable $e) {
+    
+        } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+    
             return response()->json([
-                'message' => 'Token cannot be refreshed',
+                'success' => false,
+                'message' => 'Refresh token expired'
+            ], 401);
+    
+        } catch (\Throwable $e) {
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to refresh token'
             ], 401);
         }
     }

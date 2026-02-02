@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7baab3796e297d265dc8e9fa63bb6442",
+    "content-hash": "14361d1b6014dbe07152b4a0967997ed",
     "packages": [
         {
             "name": "brick/math",
@@ -6130,6 +6130,63 @@
                 }
             ],
             "time": "2025-04-16T22:22:54+00:00"
+        },
+        {
+            "name": "unimtx/uni-sdk",
+            "version": "v0.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/unimtx/uni-php-sdk.git",
+                "reference": "0d129401d14a6c447e5e7cbd3d66562d569cd3bf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/unimtx/uni-php-sdk/zipball/0d129401d14a6c447e5e7cbd3d66562d569cd3bf",
+                "reference": "0d129401d14a6c447e5e7cbd3d66562d569cd3bf",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "php": ">=7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Uni\\": "./src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Unimatrix",
+                    "email": "dev@unimtx.com",
+                    "homepage": "https://github.com/unimtx",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The official Unimatrix SDK for PHP.",
+            "homepage": "https://unimtx.com",
+            "keywords": [
+                "2fa",
+                "api",
+                "messaging",
+                "otp",
+                "sdk",
+                "sms",
+                "unimatrix",
+                "unisdk",
+                "verification"
+            ],
+            "support": {
+                "docs": "https://www.unimtx.com/docs",
+                "email": "support@unimtx.com",
+                "issues": "https://github.com/unimtx/uni-php-sdk/issues",
+                "source": "https://github.com/unimtx/uni-php-sdk/tree/v0.3.0"
+            },
+            "time": "2023-07-28T10:18:16+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
