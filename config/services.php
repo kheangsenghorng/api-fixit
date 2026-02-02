@@ -40,6 +40,12 @@ return [
         'purchase_url' => env('ABA_PURCHASE_URL'),
         'check_url' => env('ABA_CHECK_TRANSACTION_URL'),
     ],
+    'telegram' => [
+        'gateway_token' => env('TELEGRAM_GATEWAY_TOKEN'),
+        'gateway_url' => env('TELEGRAM_GATEWAY_URL'),
+   ],
+
+
 
 
 ];
