@@ -8,176 +8,114 @@ use Illuminate\Support\Facades\Http;
 
 class PayWayController extends Controller
 {
-    private function reqTime()
+    public function getPaymentData(Request $request)
     {
-        return now()->utc()->format('YmdHis');
+        $req_time = now()->format('YmdHis');
+        $merchant_id = env('ABA_MERCHANT_ID');
+        $tran_id = 'TXN' . time();
+
+        $amount = number_format($request->amount ?? 10, 2, '.', '');
+        $currency = "USD";
+
+        $items = base64_encode(json_encode([
+            [
+                "name" => "Order ".$tran_id,
+                "quantity" => 1,
+                "price" => $amount
+            ]
+        ]));
+
+        $return_url = base64_encode(env('FRONTEND_URL') . "/success");
+        $cancel_url = base64_encode(env('FRONTEND_URL') . "/cancel");
+
+        $fields = [
+            "req_time" => $req_time,
+            "merchant_id" => $merchant_id,
+            "tran_id" => $tran_id,
+            "firstname" => "John",
+            "lastname" => "Doe",
+            "email" => "customer@test.com",
+            "phone" => "012345678",
+            "type" => "purchase",
+            "payment_option" => "cards",
+            "items" => $items,
+            "shipping" => "0",
+            "amount" => $amount,
+            "currency" => $currency,
+            "return_url" => $return_url,
+            "cancel_url" => $cancel_url,
+            "skip_success_page" => "1",
+            "continue_success_url" => "",
+            "return_deeplink" => "",
+            "custom_fields" => "",
+            "return_params" => "",
+            "payout" => "",
+            "lifetime" => "",
+            "additional_params" => "",
+            "google_pay_token" => "",
+        ];
+
+        // Ensure no null values
+        foreach ($fields as $k => $v) {
+            $fields[$k] = $v ?? '';
+        }
+
+        // Hash string (ORDER IS CRITICAL)
+        $hashStr =
+            $fields['req_time'] .
+            $fields['merchant_id'] .
+            $fields['tran_id'] .
+            $fields['amount'] .
+            $fields['items'] .
+            $fields['shipping'] .
+            $fields['firstname'] .
+            $fields['lastname'] .
+            $fields['email'] .
+            $fields['phone'] .
+            $fields['type'] .
+            $fields['payment_option'] .
+            $fields['return_url'] .
+            $fields['cancel_url'] .
+            $fields['continue_success_url'] .
+            $fields['return_deeplink'] .
+            $fields['currency'] .
+            $fields['custom_fields'] .
+            $fields['return_params'] .
+            $fields['payout'] .
+            $fields['lifetime'] .
+            $fields['additional_params'] .
+            $fields['google_pay_token'] .
+            $fields['skip_success_page'];
+
+        $fields['hash'] = base64_encode(
+            hash_hmac('sha512', $hashStr, env('ABA_API_KEY'), true)
+        );
+
+        // Return fields ONLY (browser will post to PayWay)
+        return response()->json($fields);
     }
 
-    private function tran()
+    public function checkTransactionV2(Request $request)
     {
-        return 'TX'.now()->format('ymdHis').rand(100,999);
+        $req_time = now()->format('YmdHis');
+        $merchant_id = env('ABA_MERCHANT_ID');
+        $tran_id = $request->tran_id;
+
+        $hash = base64_encode(
+            hash_hmac('sha512',$req_time.$merchant_id.$tran_id,env('ABA_API_KEY'),true)
+        );
+
+        return Http::post(env('ABA_CHECK_TRANSACTION2_URL'),[
+            "req_time"=>$req_time,
+            "merchant_id"=>$merchant_id,
+            "tran_id"=>$tran_id,
+            "hash"=>$hash
+        ])->json();
     }
 
-    private function sign($b4hash)
+    public function callback(Request $request)
     {
-        return base64_encode(hash_hmac(
-            'sha512',
-            $b4hash,
-            env('ABA_API_KEY'),
-            true
-        ));
-    }
-
-    public function index()
-{
-    return view('pay');
-}
-public function success(Request $request)
-{
-    return view('success',[
-        'tran_id'=>$request->tran_id ?? null
-    ]);
-}
-public function cancel()
-{
-    return view('cancel');
-}
-
-    // ================= CARD HOSTED =================
-public function card(Request $request)
-{
-    $req_time = now()->utc()->format('YmdHis');
-    $merchant_id = env('ABA_MERCHANT_ID');
-    $tran_id = 'TXN'.time();
-    $amount = number_format($request->amount ?? 1, 2, '.', '');
-
-    $items = base64_encode(json_encode([
-        ["name"=>"Test Product","quantity"=>1,"price"=>$amount]
-    ]));
-
-    $firstname="Test";
-    $lastname="User";
-    $email="test@test.com";
-    $phone="012345678";
-
-    $type="purchase";
-    $payment_option="cards";
-    $shipping="0";
-    $currency="USD";
-
-    $return_url = base64_encode(url('/api/payment/payway/callback'));
-    $cancel_url = base64_encode(env('FRONTEND_URL')."/cancel");
-
-    $continue_success_url="";
-    $return_deeplink="";
-    $custom_fields="";
-    $return_params="";
-    $payout="";
-    $lifetime="";
-    $additional_params="";
-    $google_pay_token="";
-    $skip_success_page="";
-
-    // EXACT HASH ORDER
-    $b4hash =
-        $req_time.$merchant_id.$tran_id.$amount.$items.$shipping.
-        $firstname.$lastname.$email.$phone.$type.$payment_option.
-        $return_url.$cancel_url.$continue_success_url.$return_deeplink.
-        $currency.$custom_fields.$return_params.$payout.$lifetime.
-        $additional_params.$google_pay_token.$skip_success_page;
-
-    $hash = base64_encode(hash_hmac('sha512',$b4hash,env('ABA_API_KEY'),true));
-
-    $res = Http::asMultipart()->post(env('ABA_PURCHASE_URL'),[
-        'req_time'=>$req_time,
-        'merchant_id'=>$merchant_id,
-        'tran_id'=>$tran_id,
-        'amount'=>$amount,
-        'items'=>$items,
-        'shipping'=>$shipping,
-        'firstname'=>$firstname,
-        'lastname'=>$lastname,
-        'email'=>$email,
-        'phone'=>$phone,
-        'type'=>$type,
-        'payment_option'=>$payment_option,
-        'currency'=>$currency,
-        'return_url'=>$return_url,
-        'cancel_url'=>$cancel_url,
-        'continue_success_url'=>$continue_success_url,
-        'return_deeplink'=>$return_deeplink,
-        'custom_fields'=>$custom_fields,
-        'return_params'=>$return_params,
-        'payout'=>$payout,
-        'lifetime'=>$lifetime,
-        'additional_params'=>$additional_params,
-        'google_pay_token'=>$google_pay_token,
-        'skip_success_page'=>$skip_success_page,
-        'view_type'=>'popup',
-        'hash'=>$hash,
-    ]);
-
-    $html = $res->getBody()->getContents();
-
-   return response($html,200)
-    ->header('Accept','application/json');
-
-}
-
-    
-    // ================= QR =================
-    public function qr(Request $request)
-    {
-        $req_time=$this->reqTime();
-        $tran_id=$this->tran();
-        $merchant_id=env('ABA_MERCHANT_ID');
-
-        $amount=number_format($request->amount,2,'.','');
-
-        $payment_option="abapay_khqr";
-        $currency="USD";
-
-        $b4hash=$req_time.$merchant_id.$tran_id.$amount.$payment_option.$currency;
-
-        $hash=$this->sign($b4hash);
-
-        $res=Http::post(env('ABA_QR_URL'),[
-            'req_time'=>$req_time,
-            'merchant_id'=>$merchant_id,
-            'tran_id'=>$tran_id,
-            'amount'=>$amount,
-            'currency'=>$currency,
-            'payment_option'=>$payment_option,
-            'qr_image_template'=>'template3_color',
-            'hash'=>$hash,
-        ]);
-
-        return response()->json($res->json());
-    }
-
-    // ================= CHECK =================
-    public function checkTransactionV2(Request $r)
-    {
-        $req_time=$this->reqTime();
-        $merchant_id=env('ABA_MERCHANT_ID');
-        $tran_id=$r->tran_id;
-
-        $hash=$this->sign($req_time.$merchant_id.$tran_id);
-
-        $res=Http::post(env('ABA_CHECK_TRANSACTION2_URL'),[
-            'req_time'=>$req_time,
-            'merchant_id'=>$merchant_id,
-            'tran_id'=>$tran_id,
-            'hash'=>$hash,
-        ]);
-
-        return response()->json($res->json());
-    }
-
-    // ================= CALLBACK =================
-    public function callback(Request $r)
-    {
-        logger($r->all());
-        return response()->json(['ok'=>true]);
+        logger("ABA CALLBACK",$request->all());
+        return response()->json(["status"=>"ok"]);
     }
 }

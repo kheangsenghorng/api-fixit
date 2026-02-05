@@ -7,15 +7,8 @@ Route::get('/payment-test', function () {
     return 'payment routes loaded';
 });
 
-Route::prefix('payment')->group(function () {
 
-    Route::post('/payway/card', [PayWayController::class, 'card']);
-    Route::post('/payway/qr', [PayWayController::class, 'qr']);
 
-    // ABA pushback
-    Route::post('/payway/callback', [PayWayController::class, 'callback']);
-
-    // Verify
-    Route::post('/payway/check', [PayWayController::class, 'checkTransaction']);
-
-});
+Route::post('/payment/aba/getPaymentData', [PayWayController::class,'getPaymentData']);
+Route::post('/payment/aba/check', [PayWayController::class,'checkTransactionV2']);
+Route::post('/payment/aba/callback', [PayWayController::class,'callback']);
