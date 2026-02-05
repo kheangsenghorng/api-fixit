@@ -57,6 +57,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->role === 'admin';
     }
+    public function isOwner()
+    {
+        return $this->role === 'owner';
+    }
 
     public function isProvider()
     {

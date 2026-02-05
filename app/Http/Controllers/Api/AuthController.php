@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -54,8 +55,8 @@ class AuthController extends Controller
             'success' => true,
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'user' => $user,
+            'expires_in' => config('jwt.refresh_ttl') * 60,
+            'user' => new UserResource($user),
         ]);
     } 
         /**
@@ -107,7 +108,7 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'user' => $user,
+            'user' => new UserResource($user),
         ]);
     }
     
@@ -122,7 +123,7 @@ class AuthController extends Controller
                 'success' => true,
                 'access_token' => $token,
                 'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
+                'expires_in' => config('jwt.refresh_ttl') * 60,
                 'user' => auth('api')->user(),
             ]);
     
