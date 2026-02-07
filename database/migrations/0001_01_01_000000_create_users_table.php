@@ -22,7 +22,7 @@ return new class extends Migration
             // Phone optional
             $table->string('phone')->nullable()->unique();
     
-            $table->enum('role', ['customer', 'provider', 'admin'])->default('customer');
+            $table->enum('role', ['customer', 'provider', 'admin','owner'])->default('customer');
     
             $table->boolean('is_active')->default(true);
     
