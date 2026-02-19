@@ -11,16 +11,27 @@ class StoreUserRequest extends FormRequest
         return true;
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'nullable|email|unique:users,email,' . $this->user,
-            'phone' => 'nullable|unique:users,phone,' . $this->user,
-            'password' => 'nullable|min:6|confirmed',
-            'role' => 'in:customer,provider,admin,owner',
-            'is_active' => 'boolean', // 👈 ADD THIS
+            'name' => 'required|string|max:255',
+
+            // ✅ Email OR phone
+            'email' => 'nullable|email|unique:users,email|required_without:phone',
+            'phone' => 'nullable|string|unique:users,phone|required_without:email',
+
+            'password' => 'required|min:6|confirmed',
+
+            'role' => 'nullable|in:customer,provider,admin,owner',
+            'is_active' => 'boolean',
         ];
     }
-    
+
+    public function messages(): array
+    {
+        return [
+            'email.required_without' => 'Email or phone is required.',
+            'phone.required_without' => 'Email or phone is required.',
+        ];
+    }
 }

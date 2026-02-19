@@ -20,8 +20,6 @@ class UserResource extends JsonResource
             'avatar' => $this->avatar
             ? asset('storage/' . $this->avatar)
             : null,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ];
     }
 }
