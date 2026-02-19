@@ -28,7 +28,6 @@ It includes:
 - 📱 Flutter iOS App (Provider)
 - 🧠 Laravel API (Backend)
 - 🖥 Next.js Dashboard (Admin & Owner)
-- ⚡ Realtime messaging using Pusher
 
 The system supports:
 
@@ -79,3 +78,21 @@ https://app.diagrams.net
 Roles are stored in `users.role`.
 
 ---
+### 👤 User Module
+ - The User Module provides full user management capabilities with scalable architecture and reusable logic. It supports user lifecycle operations, filtering, bulk actions, and real-time UI updates.
+## ✨ Features
+- Paginated user listing
+- Search users by name or email
+- Filter users by role (e.g. customer)
+- Filter users by active / inactive status
+- View single user details
+- Create new users
+- Update user profile information
+- Upload and update user avatar
+- Toggle user active status
+- Update user status
+- Bulk update user active status
+- Bulk delete users
+- Delete single users
+- updated_at
+Reusable table controller for user actions

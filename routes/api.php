@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
@@ -20,55 +21,104 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/otp/send', [OtpController::class, 'send'])->middleware('throttle:3,1');
 Route::post('/otp/verify', [OtpController::class, 'verify']);
 
+
 /*
 |--------------------------------------------------------------------------
-| Protected Routes (JWT + Active Account)
+| Protected Routes (JWT Required)
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth:api'])->group(function () {
 
-    // Auth
+    /*
+    |--------------------------------------------------------------------------
+    | Authenticated User
+    |--------------------------------------------------------------------------
+    */
+
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
 
+
     /*
     |--------------------------------------------------------------------------
-    | Users (ADMIN ONLY)
+    | ADMIN Routes
     |--------------------------------------------------------------------------
     */
 
-    Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'])
-        /*
-        |--------------------------------------------------------------------------
-        | Users
-        |--------------------------------------------------------------------------
-        */
-        ->prefix('users')
+    Route::middleware([IsActive::class, RoleMiddleware::class . ':admin'])
         ->group(function () {
 
-        Route::get('/', [UserController::class, 'index']); // List users with pagination
-        Route::post('/', [UserController::class, 'store']);// Create new user
-        Route::delete('/bulk', [UserController::class, 'destroyMany']);// Bulk delete users
-        Route::patch('/status/bulk', [UserController::class, 'updateManyStatus']);// Bulk update user statuses
+        /*
+        |--------------------------------------------------------------------------
+        | Users Management
+        |--------------------------------------------------------------------------
+        */
 
-        Route::post('/{user}/avatar', [UserController::class, 'updateAvatar']);// Update user avatar
-        Route::patch('/{user}/status', [UserController::class, 'updateStatus']);// Update user active status
-        Route::patch('/{user}/toggle', [UserController::class, 'toggleStatus']);// Toggle user active status
+        Route::prefix('users')->group(function () {
 
-        Route::get('/{user}', [UserController::class, 'show']);// Get user details
-        Route::put('/{user}', [UserController::class, 'update']);// Update user details
-        Route::delete('/{user}', [UserController::class, 'destroy']);// Delete user
+            // Static routes
+            Route::get('/', [UserController::class, 'index']);
+            Route::post('/', [UserController::class, 'store']);
+            Route::delete('/bulk', [UserController::class, 'destroyMany']);
+            Route::patch('/status/bulk', [UserController::class, 'updateManyStatus']);
+
+            // Parameter routes (restricted to numbers only)
+            Route::post('/{user}/avatar', [UserController::class, 'updateAvatar'])
+                ->whereNumber('user');
+
+            Route::patch('/{user}/status', [UserController::class, 'updateStatus'])
+                ->whereNumber('user');
+
+            Route::patch('/{user}/toggle', [UserController::class, 'toggleStatus'])
+                ->whereNumber('user');
+
+            Route::get('/{user}', [UserController::class, 'show'])
+                ->whereNumber('user');
+
+            Route::put('/{user}', [UserController::class, 'update'])
+                ->whereNumber('user');
+
+            Route::delete('/{user}', [UserController::class, 'destroy'])
+                ->whereNumber('user');
+        });
 
 
         /*
         |--------------------------------------------------------------------------
-        | Owner (Create Only)
+        | Owners Management (Admin Only)
         |--------------------------------------------------------------------------
         */
-        Route::prefix('owner')->group(function () {
-            Route::post('/', [UserController::class, 'storeOwner']); // POST /api/owner
+
+        Route::prefix('owners')->group(function () {
+
+            Route::get('/', [OwnerController::class, 'index']);
+            Route::post('/', [OwnerController::class, 'store']);
+            Route::get('/{owner}', [OwnerController::class, 'show'])
+                ->whereNumber('owner');
+            Route::put('/{owner}', [OwnerController::class, 'update'])
+                ->whereNumber('owner');
+            Route::delete('/{owner}', [OwnerController::class, 'destroy'])
+                ->whereNumber('owner');
         });
+
     });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMER Routes
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware([IsActive::class, RoleMiddleware::class . ':customer'])
+        ->prefix('customer')
+        ->group(function () {
+
+            Route::get('/profile/{user}', [UserController::class, 'show']);
+            Route::put('/profile/{user}', [UserController::class, 'update']);
+            Route::post('/avatar/{user}', [UserController::class, 'updateAvatar']);
+        });
+
 });
