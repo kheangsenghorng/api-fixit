@@ -18,55 +18,88 @@ class Owner extends Model
         'user_id',
         'business_name',
         'address',
+        'lat',
+        'lng',
+        'map_url',
         'images',
         'logo',
-        'status',
+        'status', // ✅ include status (you are setting it in controller)
     ];
 
     protected $casts = [
         'images' => 'array',
+        'lat' => 'float', // ✅ recommended
+        'lng' => 'float', // ✅ recommended
     ];
 
-    /**
-     * Owner belongs to a User
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
-
+    // Scopes
     public function scopeSearch($query, $search)
     {
-        if ($search) {
-            $query->where('business_name', 'like', "%{$search}%");
-        }
-
+        if ($search) $query->where('business_name', 'like', "%{$search}%");
         return $query;
     }
 
     public function scopeFilterUser($query, $userId)
     {
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
-
+        if ($userId) $query->where('user_id', $userId);
         return $query;
     }
 
     public function scopeFilterTrashed($query, $trashed)
     {
-        if ($trashed === 'only') {
-            $query->onlyTrashed();
-        } elseif ($trashed === 'with') {
-            $query->withTrashed();
-        }
-
+        if ($trashed === 'only') $query->onlyTrashed();
+        elseif ($trashed === 'with') $query->withTrashed();
         return $query;
     }
+
+    // ✅ Google Maps URL builder
+    public function generateMapUrl(): ?string
+    {
+        if ($this->lat !== null && $this->lng !== null) {
+            return "https://www.google.com/maps?q={$this->lat},{$this->lng}";
+        }
+        return null;
+    }
+
+    // ✅ Auto set map_url whenever saving
+    protected static function booted()
+    {
+        static::saving(function (Owner $owner) {
+            $owner->map_url = ($owner->lat !== null && $owner->lng !== null)
+                ? $owner->generateMapUrl()
+                : null;
+        });
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(OwnerDocument::class);
+    }
+    
+    public function getFinalStatusAttribute(): string
+    {
+        $docs = $this->documents;
+    
+        // no docs => pending
+        if ($docs->isEmpty()) return 'pending';
+    
+        // priority: pending > rejected > approved
+        if ($docs->contains('status', 'pending')) return 'pending';
+        if ($docs->contains('status', 'rejected')) return 'rejected';
+    
+        // all approved
+        if ($docs->every(fn ($d) => $d->status === 'approved')) return 'approved';
+    
+        return 'pending';
+    }
+
+        public function latestDocument()
+        {
+            return $this->hasOne(OwnerDocument::class)->latestOfMany();
+        }
 }

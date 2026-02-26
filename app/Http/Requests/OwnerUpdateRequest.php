@@ -22,12 +22,18 @@ class OwnerUpdateRequest extends FormRequest
             ],
 
             'business_name' => ['sometimes', 'string', 'max:255'],
+            'address'       => ['sometimes', 'string'],
 
-            'address' => ['sometimes', 'string'],
+            // ✅ NEW: location fields
+            'lat'     => ['sometimes', 'numeric', 'between:-90,90'],
+            'lng'     => ['sometimes', 'numeric', 'between:-180,180'],
+            'map_url' => ['sometimes', 'string', 'max:500'],
 
-            'images' => ['sometimes', 'array'],
+            // Images
+            'images'   => ['sometimes', 'array'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
 
+            // Logo
             'logo' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }

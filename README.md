@@ -96,3 +96,29 @@ Roles are stored in `users.role`.
 - Delete single users
 - updated_at
 Reusable table controller for user actions
+
+### Owner Features
+## Profile
+- View own profile
+- Update profile information
+## Owner Documents
+- Paginated document listing (own documents only)
+- Filter documents by status (pending / approved / rejected)
+- View single document details
+- Upload new document
+- Update document info or replace file
+- Delete document
+- Auto set status to pending after upload/update
+- View rejection reason when rejected
+## Security Rules
+- Owner cannot set owner_id
+- Owner cannot approve or reject documents
+- Owner cannot access encrypted file directly
+- Owner can only access their own documents
+## Admin (Owner Documents)
+- Paginated listing of all owner documents
+- Filter by owner or status
+- Approve / reject documents
+- Optional rejection reason
+- OTP-protected document download
+- Signed temporary download URL

@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\AdminOwnerDocumentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OwnerController;
+use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\GeocodeController;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +23,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // OTP routes (rate limited)
 Route::post('/otp/send', [OtpController::class, 'send'])->middleware('throttle:3,1');
 Route::post('/otp/verify', [OtpController::class, 'verify']);
+Route::get('/geocode/reverse', [GeocodeController::class, 'reverse']);
 
 
 /*
@@ -101,6 +105,52 @@ Route::middleware(['auth:api'])->group(function () {
                 ->whereNumber('owner');
             Route::delete('/{owner}', [OwnerController::class, 'destroy'])
                 ->whereNumber('owner');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Owner Documents (Admin Only)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('owner-documents')->group(function () {
+            Route::get('/', [AdminOwnerDocumentController::class, 'index']);
+    
+            // ✅ approve/reject
+            Route::patch('/{ownerDocument}/review', [AdminOwnerDocumentController::class, 'review'])
+                ->whereNumber('ownerDocument');
+    
+            // ✅ OTP + download (if you use them)
+            Route::post('/{ownerDocument}/otp', [AdminOwnerDocumentController::class, 'sendOtp'])
+                ->whereNumber('ownerDocument');
+    
+            Route::post('/{ownerDocument}/verify-otp', [AdminOwnerDocumentController::class, 'verifyOtp'])
+                ->whereNumber('ownerDocument');
+    
+            Route::get('/{ownerDocument}/download', [AdminOwnerDocumentController::class, 'download'])
+                ->middleware('signed')
+                ->whereNumber('ownerDocument')
+                ->name('admin.owner-documents.download');
+        });
+
+    });
+
+    
+
+    Route::middleware([IsActive::class, RoleMiddleware::class . ':owner'])
+        ->prefix('owner')
+        ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Owner Documents (Owner Only)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('owner-documents')->group(function () {
+            Route::get('/', [OwnerDocumentController::class, 'index']);
+            Route::post('/', [OwnerDocumentController::class, 'store']);
+            Route::get('/{ownerDocument}', [OwnerDocumentController::class, 'show'])->whereNumber('ownerDocument');
+            Route::put('/{ownerDocument}', [OwnerDocumentController::class, 'update'])->whereNumber('ownerDocument');
+            Route::delete('/{ownerDocument}', [OwnerDocumentController::class, 'destroy'])->whereNumber('ownerDocument');
         });
 
     });
