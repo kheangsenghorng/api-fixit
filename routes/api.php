@@ -129,7 +129,9 @@ Route::middleware(['auth:api'])->group(function () {
             Route::get('/{ownerDocument}/download', [AdminOwnerDocumentController::class, 'download'])
                 ->middleware('signed')
                 ->whereNumber('ownerDocument')
-                ->name('admin.owner-documents.download');
+                ->name('admin.owner-documents.download');      
+                
+                
         });
 
     });

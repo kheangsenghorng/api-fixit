@@ -47,6 +47,7 @@ class OwnerDocument extends Model
         'passport',
         'id_card',
         'driver_license',
+        'national_id',
         'birth_certificate',
     ];
 
