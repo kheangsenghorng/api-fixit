@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\AdminOwnerDocumentController;
+use App\Http\Controllers\Api\TypeController;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -100,21 +101,23 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
     */
     Route::prefix('types')->group(function () {
 
-        Route::get('/', [CategoryController::class, 'index']);
-        Route::post('/', [CategoryController::class, 'store']);
-
-        Route::delete('/bulk', [CategoryController::class, 'destroyMany']);
-        Route::patch('/status/bulk', [CategoryController::class, 'updateManyStatus']);
-
-        Route::post('/{types}/restore', [CategoryController::class, 'restore'])->whereNumber('category');
-        Route::delete('/{types}/force', [CategoryController::class, 'forceDelete'])->whereNumber('category');
-
-        Route::get('/{types}', [CategoryController::class, 'show'])->whereNumber('category');
-        Route::put('/{types}', [CategoryController::class, 'update'])->whereNumber('category');
-        Route::delete('/{types}', [CategoryController::class, 'destroy'])->whereNumber('category');
-
+        Route::get('/', [TypeController::class, 'index']);
+        Route::get('/active', [TypeController::class, 'active']);
+        Route::post('/', [TypeController::class, 'store']);
+    
+        Route::delete('/bulk', [TypeController::class, 'destroyMany']);
+        Route::patch('/status/bulk', [TypeController::class, 'updateManyStatus']);
+    
+        Route::get('/{type}', [TypeController::class, 'show'])
+            ->whereNumber('type');
+    
+        Route::put('/{type}', [TypeController::class, 'update'])
+            ->whereNumber('type');
+    
+        Route::delete('/{type}', [TypeController::class, 'destroy'])
+            ->whereNumber('type');
+    
     });
-
 
 
 });
