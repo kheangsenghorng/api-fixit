@@ -14,10 +14,10 @@ class CategoryStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:categories,name',
             'category_group' => 'required|in:service,mechanical',
             'status' => 'nullable|in:active,inactive',
-            'icon' => 'nullable|string'
+            'icon' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048'
         ];
     }
 }
