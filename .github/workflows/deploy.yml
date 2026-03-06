@@ -20,7 +20,7 @@ jobs:
           timeout: 30s
           command_timeout: 10m
           script: |
-            cd public_html/fixit
+            cd domains/servicemeite.io/public_html/fixit
 
             git pull origin master
 
