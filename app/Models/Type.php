@@ -22,9 +22,19 @@ class Type extends Model
     // 🔎 Search
     public function scopeSearch($query, $search)
     {
-        if ($search) {
-            $query->where('name', 'like', "%{$search}%");
+        if (!$search) {
+            return $query;
         }
+    
+        return $query->where(function ($q) use ($search) {
+    
+            $q->where('name', 'like', "%{$search}%")
+    
+            ->orWhereHas('category', function ($cat) use ($search) {
+                $cat->where('name', 'like', "%{$search}%");
+            });
+    
+        });
     }
 
     // 📂 Category filter
