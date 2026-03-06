@@ -66,17 +66,18 @@ class TypeController extends Controller
         $data = $request->validated();
     
         if ($request->hasFile('icon')) {
-    
             $type->deleteIcon();
-    
             $data['icon'] = $request->file('icon')->store('types', 'public');
         }
     
         $type->update($data);
     
-        return new TypeResource($type);
+        return response()->json([
+            'success' => true,
+            'message' => 'Type updated successfully',
+            'data' => new TypeResource($type),
+        ]);
     }
-
     public function updateManyStatus(Request $request)
     {
         $request->validate([
