@@ -41,13 +41,10 @@ class Type extends Model
     public function scopeCategory($query, $categoryId)
     {
         if ($categoryId) {
-            $query->where('category_id', $categoryId)
-                  ->whereHas('category', function ($q) {
-                      $q->where('status', 'active');
-                  });
+            $query->where('category_id', $categoryId);
         }
     }
-
+    
     // ⚡ Status filter
     public function scopeStatus($query, $status)
     {
