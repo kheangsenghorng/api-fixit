@@ -80,6 +80,7 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
 
         Route::get('/', [CategoryController::class, 'index']);
         Route::post('/', [CategoryController::class, 'store']);
+        Route::get('/active', [CategoryController::class, 'activeCategories']);
 
         Route::delete('/bulk', [CategoryController::class, 'destroyMany']);
         Route::patch('/status/bulk', [CategoryController::class, 'updateManyStatus']);

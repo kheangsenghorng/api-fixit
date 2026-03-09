@@ -24,15 +24,17 @@ class TypeController extends Controller
     
         return TypeResource::collection($types);
     }
-
     public function active(Request $request)
     {
         $query = Type::with('category')
-            ->where('status', 'active');
+            ->where('status', 'active')
+            ->whereHas('category', function ($q) {
+                $q->where('status', 'active');
+            });
     
         // filter by category
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
         }
     
         $types = $query->latest()->get();

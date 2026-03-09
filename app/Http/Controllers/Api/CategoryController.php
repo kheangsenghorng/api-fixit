@@ -10,6 +10,8 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+use function Symfony\Component\String\s;
+
 class CategoryController extends Controller
 {
     public function __construct()
@@ -43,6 +45,17 @@ class CategoryController extends Controller
         $categories = $query->latest()->paginate(10);
 
         return CategoryResource::collection($categories);
+    }
+
+    public function activeCategories()
+    {
+        $categories = Category::where('status', 'active')->latest()->get();
+    
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Active categories retrieved successfully',
+            'data'    => CategoryResource::collection($categories),
+        ]);
     }
 
     /**
