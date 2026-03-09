@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasUpdatedAfter;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +10,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable,HasUpdatedAfter;
 
     protected $fillable = [
         'name',
@@ -57,6 +58,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->role === 'admin';
     }
+    public function isOwner()
+    {
+        return $this->role === 'owner';
+    }
 
     public function isProvider()
     {
@@ -67,4 +72,5 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->role === 'customer';
     }
+    
 }

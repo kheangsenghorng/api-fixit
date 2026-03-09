@@ -5,16 +5,16 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 
-class IsActive
+class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = auth('api')->user();
 
-        if (! $user || ! $user->is_active) {
+        if (! $user || ! in_array($user->role, $roles)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Account not verified.'
+                'message' => 'Forbidden'
             ], 403);
         }
 
