@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Auth\OtpController;
-use App\Http\Controllers\GeocodeController;
+use App\Http\Controllers\Api\GeocodeController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);

@@ -37,22 +37,42 @@ class TypeController extends Controller
             $query->where('category_id', $request->category_id);
         }
     
-        $types = $query->latest()->get();
+        // filter by search
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
     
-        return TypeResource::collection($types);
+        $types = $query->latest()
+            ->paginate($request->get('per_page', 10));
+    
+        return response()->json([
+            'message' => 'Success Types retrieved successfully',
+            'data' => TypeResource::collection($types),
+        ]);
     }
     
     public function store(StoreTypeRequest $request)
     {
         $data = $request->validated();
+        // Check if category is active
+        $category = \App\Models\Category::find($data['category_id']);
 
+        if (!$category || $category->status !== 'active') {
+            return response()->json([
+                'message' => 'Cannot create type. Category is inactive.'
+            ], 422);
+        }
+    
         if ($request->hasFile('icon')) {
             $data['icon'] = $request->file('icon')->store('types', 'public');
         }
-
+    
         $type = Type::create($data);
-
-        return new TypeResource($type);
+    
+        return response()->json([
+            'message' => 'Type created successfully',
+            'data' => new TypeResource($type->load('category')), // ✅ load relation
+        ]);
     }
 
 
@@ -67,6 +87,18 @@ class TypeController extends Controller
     {
         $data = $request->validated();
     
+        // Use new category if provided, otherwise keep old one
+        $categoryId = $data['category_id'] ?? $type->category_id;
+    
+        $category = \App\Models\Category::find($categoryId);
+    
+        if (!$category || $category->status !== 'active') {
+            return response()->json([
+                'message' => 'Cannot update type. Category is inactive.'
+            ], 422);
+        }
+    
+        // Handle icon update
         if ($request->hasFile('icon')) {
             $type->deleteIcon();
             $data['icon'] = $request->file('icon')->store('types', 'public');
@@ -77,7 +109,7 @@ class TypeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Type updated successfully',
-            'data' => new TypeResource($type),
+            'data' => new TypeResource($type->load('category')),
         ]);
     }
     public function updateManyStatus(Request $request)
