@@ -11,7 +11,8 @@ use App\Http\Requests\OwnerUpdateRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class OwnerController extends BaseController
 {
@@ -249,18 +250,44 @@ class OwnerController extends BaseController
     | File Helpers
     |--------------------------------------------------------------------------
     */
-
     private function uploadImages($request)
     {
-        return collect($request->file('images'))
-            ->map(fn ($file) => $file->store('owners/images', 'public'))
-            ->toArray();
+        $manager = new ImageManager(new Driver());
+    
+        return collect($request->file('images'))->map(function ($file) use ($manager) {
+    
+            $image = $manager->read($file)->scale(width: 800);
+    
+            $filename = uniqid() . '.webp';
+            $path = 'owners/images/' . $filename;
+    
+            Storage::disk('public')->put(
+                $path,
+                $image->toWebp(85)
+            );
+    
+            return $path;
+    
+        })->toArray();
     }
 
     private function uploadLogo($request)
     {
-        return $request->file('logo')
-            ->store('owners/logo', 'public');
+        $manager = new ImageManager(new Driver());
+    
+        $file = $request->file('logo');
+    
+        $image = $manager->read($file)->scale(width: 300);
+    
+        $filename = uniqid() . '.webp';
+        $path = 'owners/logo/' . $filename;
+    
+        Storage::disk('public')->put(
+            $path,
+            $image->toWebp(90)
+        );
+    
+        return $path;
     }
 
     private function deleteImages($images)
