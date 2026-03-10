@@ -21,3 +21,7 @@ Route::get('/geocode/reverse', [GeocodeController::class, 'reverse']);
 // Category routes (public) - only active categories
 Route::get('/active', [TypeController::class, 'active']);
 
+
+// Category routes (public) - only active categories
+
+

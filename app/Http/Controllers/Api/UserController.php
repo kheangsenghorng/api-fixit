@@ -10,6 +10,8 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class UserController extends Controller
 {
@@ -238,18 +240,33 @@ class UserController extends Controller
         $validated = $request->validate([
             'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
-
-        // Delete old avatar
+    
         if ($user->avatar) {
             Storage::disk('public')->delete($user->avatar);
         }
-
-        $path = $validated['avatar']->store('avatars', 'public');
-
+    
+        $file = $request->file('avatar');
+    
+        // Create image manager
+        $manager = new ImageManager(new Driver());
+    
+        // Read image
+        $image = $manager->read($file);
+    
+        // Generate filename
+        $filename = time() . '.webp';
+        $path = 'avatars/' . $filename;
+    
+        // Convert and save
+        Storage::disk('public')->put(
+            $path,
+            $image->toWebp(90)
+        );
+    
         $user->update([
             'avatar' => $path,
         ]);
-
+    
         return response()->json([
             'success' => true,
             'user' => new UserResource($user->fresh()),
