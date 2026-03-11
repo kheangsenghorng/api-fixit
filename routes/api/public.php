@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Api\GeocodeController;
+use App\Http\Controllers\Api\ServiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -20,6 +21,9 @@ Route::get('/geocode/reverse', [GeocodeController::class, 'reverse']);
 
 // Category routes (public) - only active categories
 Route::get('/active', [TypeController::class, 'active']);
+
+// Service routes (public) - only active services
+Route::get('/active', [ServiceController::class, 'activeServices']);
 
 
 // Category routes (public) - only active categories
