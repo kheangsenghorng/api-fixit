@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\AdminOwnerDocumentController;
+use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
@@ -118,6 +119,33 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
         Route::delete('/{type}', [TypeController::class, 'destroy'])
             ->whereNumber('type');
     
+    });
+
+       /*
+    |--------------------------------------------------------------------------
+    | Service  (Admin Only)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('services')->group(function () {
+
+        Route::get('/', [ServiceController::class, 'index']);
+    
+        Route::get('/active', [ServiceController::class, 'activeServices']);
+    
+        Route::post('/', [ServiceController::class, 'store']);
+    
+        Route::delete('/bulk', [ServiceController::class, 'destroyMany']);
+    
+        Route::patch('/status/bulk', [ServiceController::class, 'updateManyStatus']);
+    
+        Route::get('/{service}', [ServiceController::class, 'show'])
+            ->whereNumber('service');
+    
+        Route::put('/{service}', [ServiceController::class, 'update'])
+            ->whereNumber('service');
+    
+        Route::delete('/{service}', [ServiceController::class, 'destroy'])
+            ->whereNumber('service');
     });
 
 

@@ -9,7 +9,9 @@ return [
     'allowed_origins' => [
         'http://localhost:3000',
         'http://localhost:5173',
+        'https://dashboard-fixit.vercel.app',
     ],
+
 
     'allowed_origins_patterns' => [],
 
