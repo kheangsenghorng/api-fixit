@@ -11,8 +11,9 @@
         <div style="border-top: 1px solid #f3f4f6; padding-top: 20px; margin-top: 20px;">
             <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">Please login to the admin dashboard to review the service details.</p>
             
-            <a href="{{ url('/admin/dashboard') }}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">
-                Review Service →
+            <a href="{{ config('app.dashboard_url') }}"
+            style="display:inline-block;background-color:#4f46e5;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:500;font-size:14px;">
+            Review Service →
             </a>
         </div>
     </div>
