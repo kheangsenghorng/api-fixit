@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\AdminOwnerDocumentController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
+use App\Http\Middleware\CheckOwnerDocument;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -134,7 +135,8 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
 
         Route::get('/stats', [ServiceController::class, 'stats']);
     
-        Route::post('/', [ServiceController::class, 'store']);
+        Route::post('/', [ServiceController::class, 'store'])
+         ->middleware(CheckOwnerDocument::class);
     
         Route::delete('/bulk', [ServiceController::class, 'destroyMany']);
     

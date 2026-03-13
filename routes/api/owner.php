@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
+use App\Http\Middleware\CheckOwnerDocument;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -58,7 +59,10 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
 
         Route::get('/stats', [ServiceController::class, 'serviceStats']);
 
-        Route::post('/', [ServiceController::class, 'store']);
+        // Require OwnerDocument before creating service
+        Route::post('/', [ServiceController::class, 'store'])
+         ->middleware(CheckOwnerDocument::class);
+
 
         Route::patch('/status/bulk', [ServiceController::class, 'updateManyStatus']);
 
