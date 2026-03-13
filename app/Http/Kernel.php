@@ -19,5 +19,6 @@ class Kernel extends HttpKernel
         'auth' => \App\Http\Middleware\Authenticate::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'is_active' => \App\Http\Middleware\IsActive::class,
+        'owner.document' => \App\Http\Middleware\CheckOwnerDocument::class,
     ];
 }
