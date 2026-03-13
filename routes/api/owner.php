@@ -38,7 +38,6 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
 
 
     Route::prefix('types')->group(function () {
-
         Route::get('/', [TypeController::class, 'index']);
         Route::get('/active', [TypeController::class, 'active']);
         Route::post('/', [TypeController::class, 'store']);
@@ -46,25 +45,29 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
     });
 
 
-         /*
+     /*
     |--------------------------------------------------------------------------
-    | Service  (Admin Only)
+    | Service  owner
     |--------------------------------------------------------------------------
     */
     Route::prefix('services')->group(function () {
 
-        Route::get('/', [ServiceController::class, 'index']);
-    
+        Route::get('/', [ServiceController::class, 'myServices']);
+
+        Route::get('/{service}', [ServiceController::class, 'show']);
+
+        Route::get('/stats', [ServiceController::class, 'serviceStats']);
+
         Route::post('/', [ServiceController::class, 'store']);
-    
+
         Route::patch('/status/bulk', [ServiceController::class, 'updateManyStatus']);
-    
-        Route::get('/{service}', [ServiceController::class, 'myServices'])
+
+        Route::get('/{service}', [ServiceController::class, 'show'])
             ->whereNumber('service');
-    
+
         Route::put('/{service}', [ServiceController::class, 'update'])
             ->whereNumber('service');
-    
+
         Route::delete('/{service}', [ServiceController::class, 'destroy'])
             ->whereNumber('service');
     });
