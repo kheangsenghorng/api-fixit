@@ -18,41 +18,78 @@ class ServiceController extends Controller
     public function index(Request $request)
     {
         $query = Service::with(['owner','category','type']);
+        /*
+        |--------------------------------------------------------------------------
+        | Keyword Search
+        |--------------------------------------------------------------------------
+        */
     
-        // Search by title
         if ($request->filled('search')) {
-
+    
             $search = trim($request->search);
-        
+    
             $query->where(function ($q) use ($search) {
-        
+    
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-        
+                  ->orWhere('description', 'like', "%{$search}%")
+    
+                  ->orWhereHas('category', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+    
+                  ->orWhereHas('type', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+    
             });
         }
+        /*
+        |--------------------------------------------------------------------------
+        | Category Filter
+        |--------------------------------------------------------------------------
+        */
     
-        // Filter by category
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
     
-        // Filter by type
+        /*
+        |--------------------------------------------------------------------------
+        | Service Type Filter
+        |--------------------------------------------------------------------------
+        */
+    
         if ($request->filled('type_id')) {
             $query->where('type_id', $request->type_id);
         }
     
-        // Filter by owner
+        /*
+        |--------------------------------------------------------------------------
+        | Owner Filter
+        |--------------------------------------------------------------------------
+        */
+    
         if ($request->filled('owner_id')) {
             $query->where('owner_id', $request->owner_id);
         }
     
-        // Filter by status
+        /*
+        |--------------------------------------------------------------------------
+        | Status Filter
+        |--------------------------------------------------------------------------
+        */
+    
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
     
-        // Price range filter
+        /*
+        |--------------------------------------------------------------------------
+        | 
+        
+        |--------------------------------------------------------------------------
+        */
+    
         if ($request->filled('price_min')) {
             $query->where('base_price', '>=', $request->price_min);
         }
@@ -60,6 +97,52 @@ class ServiceController extends Controller
         if ($request->filled('price_max')) {
             $query->where('base_price', '<=', $request->price_max);
         }
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Rating Filter
+        |--------------------------------------------------------------------------
+        */
+    
+        if ($request->filled('rating')) {
+            $query->whereHas('reviews', function ($q) use ($request) {
+                $q->where('rating', '>=', $request->rating);
+            });
+        }
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Location Radius Search (lat/lng)
+        |--------------------------------------------------------------------------
+        */
+    
+        if ($request->filled('lat') && $request->filled('lng') && $request->filled('radius')) {
+    
+            $lat = $request->lat;
+            $lng = $request->lng;
+            $radius = $request->radius;
+    
+            $query->selectRaw("
+                services.*,
+                (
+                    6371 * acos(
+                        cos(radians(?))
+                        * cos(radians(lat))
+                        * cos(radians(lng) - radians(?))
+                        + sin(radians(?))
+                        * sin(radians(lat))
+                    )
+                ) AS distance
+            ", [$lat, $lng, $lat])
+            ->having("distance", "<=", $radius)
+            ->orderBy("distance");
+        }
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
     
         $services = $query->latest()->paginate(10);
     
@@ -76,18 +159,125 @@ class ServiceController extends Controller
     }
 
 
-    public function myServices()
+    public function myServices(Request $request)
     {
         $owner = Owner::where('user_id', auth()->id())->firstOrFail();
-
-        $services = Service::where('owner_id', $owner->id)
-            ->latest()
-            ->paginate(10);
-
+    
+        $query = Service::with(['category','type','owner'])
+            ->where('owner_id', $owner->id);
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+    
+        if ($request->filled('search')) {
+    
+            $search = trim($request->search);
+    
+            $query->where(function ($q) use ($search) {
+    
+                $q->where('title','like',"%{$search}%")
+                  ->orWhere('description','like',"%{$search}%")
+    
+                  ->orWhereHas('category', function ($q) use ($search) {
+                      $q->where('name','like',"%{$search}%");
+                  })
+    
+                  ->orWhereHas('type', function ($q) use ($search) {
+                      $q->where('name','like',"%{$search}%");
+                  });
+    
+            });
+        }
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Filters
+        |--------------------------------------------------------------------------
+        */
+    
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+    
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+    
+        if ($request->filled('type_id')) {
+            $query->where('type_id', $request->type_id);
+        }
+    
+        if ($request->filled('price_min')) {
+            $query->where('base_price', '>=', $request->price_min);
+        }
+    
+        if ($request->filled('price_max')) {
+            $query->where('base_price', '<=', $request->price_max);
+        }
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+    
+        $services = $query->latest()->paginate(10);
+    
         return response()->json([
             'success' => true,
             'message' => 'Owner services',
-            'data' => ServiceResource::collection($services)
+            'data' => ServiceResource::collection($services),
+            'meta' => [
+                'current_page' => $services->currentPage(),
+                'last_page' => $services->lastPage(),
+                'total' => $services->total(),
+            ]
+        ]);
+    }
+
+    public function serviceStats()
+    {
+        $owner = Owner::where('user_id', auth()->id())->firstOrFail();
+    
+        $services = Service::where('owner_id', $owner->id);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Owner service statistics',
+            'data' => [
+                'total_services' => (clone $services)->count(),
+                'active_services' => (clone $services)->where('status', 'active')->count(),
+                'paused_services' => (clone $services)->where('status', 'paused')->count(),
+                'draft_services' => (clone $services)->where('status', 'draft')->count(),
+            ]
+        ]);
+    }
+
+    public function stats()
+    {
+        $totalServices = Service::count();
+
+        $activeServices = Service::where('status', 'active')->count();
+
+        $pausedServices = Service::where('status', 'paused')->count();
+
+        $draftServices = Service::where('status', 'draft')->count();
+
+        $totalCategories = Service::distinct('category_id')->count('category_id');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Service statistics',
+            'data' => [
+                'total_services' => $totalServices,
+                'active_services' => $activeServices,
+                'paused_services' => $pausedServices,
+                'draft_services' => $draftServices,
+                'total_categories' => $totalCategories,
+            ]
         ]);
     }
 
@@ -108,38 +298,39 @@ class ServiceController extends Controller
     public function store(ServiceStoreRequest $request)
     {
         $data = $request->validated();
-
+    
+        $data['status'] = 'active';
+    
         // Admin can select owner
         if (auth()->user()->role === 'admin') {
-
+    
             if (!$request->owner_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'owner_id is required for admin'
                 ], 422);
             }
-
+    
             $data['owner_id'] = $request->owner_id;
-
+    
         } else {
-
-            // Owner can only create their own service
+    
             $owner = Owner::where('user_id', auth()->id())->firstOrFail();
-
             $data['owner_id'] = $owner->id;
+    
         }
-
-        // Upload images
+    
         if ($request->hasFile('images')) {
-
+    
             $data['images'] = ImageUploadService::uploadMultiple(
                 $request->file('images'),
                 'services'
             );
+    
         }
-
+    
         $service = Service::create($data);
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Service created successfully',
@@ -147,11 +338,10 @@ class ServiceController extends Controller
         ], 201);
     }
 
-
     public function show(Service $service)
     {
         $service->load(['owner','category','type']);
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Service details',

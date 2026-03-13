@@ -131,6 +131,8 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
         Route::get('/', [ServiceController::class, 'index']);
     
         Route::get('/active', [ServiceController::class, 'activeServices']);
+
+        Route::get('/stats', [ServiceController::class, 'stats']);
     
         Route::post('/', [ServiceController::class, 'store']);
     

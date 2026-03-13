@@ -20,10 +20,14 @@ Route::get('/geocode/reverse', [GeocodeController::class, 'reverse']);
 
 
 // Category routes (public) - only active categories
-Route::get('/active', [TypeController::class, 'active']);
+Route::prefix('type')->group(function () {
+    Route::get('/active', [TypeController::class, 'active']);
+}); 
 
 // Service routes (public) - only active services
-Route::get('/active', [ServiceController::class, 'activeServices']);
+Route::prefix('service')->group(function () {
+    Route::get('/active', [ServiceController::class, 'activeServices']);
+});
 
 
 // Category routes (public) - only active categories
