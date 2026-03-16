@@ -42,6 +42,7 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
             ->whereNumber('owner');
         Route::delete('/{owner}', [OwnerController::class, 'destroy'])
             ->whereNumber('owner');
+        Route::delete('/{owner}/image', [OwnerController::class, 'deleteImage']);
     });
 
 
@@ -64,11 +65,6 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
         Route::post('/{ownerDocument}/verify-otp', [AdminOwnerDocumentController::class, 'verifyOtp'])
             ->whereNumber('ownerDocument');
 
-        Route::get('/{ownerDocument}/download', [AdminOwnerDocumentController::class, 'download'])
-            ->middleware('signed')
-            ->whereNumber('ownerDocument')
-            ->name('admin.owner-documents.download');      
-            
             
     });
 
@@ -139,6 +135,7 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
          ->middleware(CheckOwnerDocument::class);
     
         Route::delete('/bulk', [ServiceController::class, 'destroyMany']);
+        Route::delete('/{service}/image', [ServiceController::class, 'deleteImage']);
     
         Route::patch('/status/bulk', [ServiceController::class, 'updateManyStatus']);
     

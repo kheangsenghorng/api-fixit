@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\CheckOwnerDocument;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
@@ -12,6 +14,31 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'])
     ->prefix('owner')
     ->group(function () {
+
+    Route::prefix('users')->group(function () {
+
+        Route::get('/{user}', [UserController::class, 'show'])->whereNumber('user');
+        Route::post('/{user}/avatar', [UserController::class, 'updateAvatar'])->whereNumber('user');
+        Route::put('/{user}', [UserController::class, 'update'])->whereNumber('user');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->whereNumber('user');
+
+    });
+
+
+   /*
+    |--------------------------------------------------------------------------
+    | Owners
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('owners')->group(function () {
+
+        Route::post('/', [OwnerController::class, 'store']);
+        Route::get('/{owner}', [OwnerController::class, 'show'])->whereNumber('owner');
+        Route::put('/{owner}', [OwnerController::class, 'update'])->whereNumber('owner');
+        Route::delete('/{owner}', [OwnerController::class, 'destroy'])->whereNumber('owner');
+        Route::delete('/{owner}/image', [OwnerController::class, 'deleteImage']);
+    });
 
     Route::prefix('owner-documents')->group(function () {
 
@@ -74,6 +101,8 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
 
         Route::delete('/{service}', [ServiceController::class, 'destroy'])
             ->whereNumber('service');
+
+        Route::delete('/{service}/image  ', [ServiceController::class, 'deleteImage']);   
     });
 
 });

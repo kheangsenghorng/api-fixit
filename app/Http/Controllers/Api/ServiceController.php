@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\ServiceStoreRequest;
 use App\Http\Requests\ServiceUpdateRequest;
 use App\Services\ImageUploadService;
+use Illuminate\Support\Facades\Auth;
 
 class ServiceController extends Controller
 {
@@ -161,7 +162,16 @@ class ServiceController extends Controller
 
     public function myServices(Request $request)
     {
-        $owner = Owner::where('user_id', auth()->id())->firstOrFail();
+        $userId = Auth::check() ? Auth::id() : null;
+
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
+        $owner = Owner::where('user_id', $userId)->firstOrFail();
     
         $query = Service::with(['category','type','owner'])
             ->where('owner_id', $owner->id);
@@ -281,16 +291,26 @@ class ServiceController extends Controller
         ]);
     }
 
-    public function activeServices()
+    public function activeServices(Request $request)
     {
-        $services = Service::where('status', 'active')
-            ->latest()
-            ->paginate(10);
-
+        $query = Service::with(['category','type','owner'])
+            ->where('status', 'active');
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Filter by Type
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('type_id')) {
+            $query->where('type_id', $request->type_id);
+        }
+    
+        $services = $query->latest()->paginate(10);
+    
         return response()->json([
             'success' => true,
             'message' => 'Active services',
-            'data' => ServiceResource::collection($services)
+            'data' => ServiceResource::collection($services),
         ]);
     }
 
@@ -302,7 +322,7 @@ class ServiceController extends Controller
         $data['status'] = 'active';
     
         // Admin can select owner
-        if (auth()->user()->role === 'admin') {
+        if (Auth::user()->role === 'admin') {
     
             if (!$request->owner_id) {
                 return response()->json([
@@ -353,20 +373,25 @@ class ServiceController extends Controller
     public function update(ServiceUpdateRequest $request, Service $service)
     {
         $data = $request->validated();
-
-        // Replace images
+    
+        // If new images uploaded
         if ($request->hasFile('images')) {
-
-            ImageUploadService::delete($service->images);
-
-            $data['images'] = ImageUploadService::uploadMultiple(
+    
+            // Upload new images
+            $newImages = ImageUploadService::uploadMultiple(
                 $request->file('images'),
                 'services'
             );
+    
+            // Merge old images + new images
+            $data['images'] = array_merge(
+                $service->images ?? [],
+                $newImages
+            );
         }
-
+    
         $service->update($data);
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Service updated successfully',
@@ -421,6 +446,44 @@ class ServiceController extends Controller
             'success' => true,
             'message' => 'Services status updated'
         ]);
+    }
+
+    public function deleteImage(Request $request, Service $service)
+{
+    $request->validate([
+        'image' => 'required|string'
+    ]);
+
+    $image = $request->image;
+
+    $images = $service->images ?? [];
+
+    // check image exists in service
+    if (!in_array($image, $images)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Image not found in service'
+        ], 404);
+    }
+
+    // delete file from storage
+    ImageUploadService::delete($image);
+
+    // remove image from array
+    $images = array_values(array_filter($images, function ($img) use ($image) {
+        return $img !== $image;
+    }));
+
+    // update service
+    $service->update([
+        'images' => $images
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Image deleted successfully',
+        'data' => $images
+    ]);
     }
 
 }

@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTypeRequest;
 use App\Http\Requests\UpdateTypeRequest;
 use App\Http\Resources\TypeResource;
-
+use App\Services\ImageUploadService;
 
 class TypeController extends Controller
 {
@@ -54,9 +54,9 @@ class TypeController extends Controller
     public function store(StoreTypeRequest $request)
     {
         $data = $request->validated();
-        // Check if category is active
+    
         $category = \App\Models\Category::find($data['category_id']);
-
+    
         if (!$category || $category->status !== 'active') {
             return response()->json([
                 'message' => 'Cannot create type. Category is inactive.'
@@ -64,17 +64,20 @@ class TypeController extends Controller
         }
     
         if ($request->hasFile('icon')) {
-            $data['icon'] = $request->file('icon')->store('types', 'public');
+            $data['icon'] = ImageUploadService::upload(
+                $request->file('icon'),
+                'types',
+                600
+            );
         }
     
         $type = Type::create($data);
     
         return response()->json([
             'message' => 'Type created successfully',
-            'data' => new TypeResource($type->load('category')), // ✅ load relation
+            'data' => new TypeResource($type->load('category')),
         ]);
     }
-
 
     public function show(Type $type)
     {
@@ -82,12 +85,11 @@ class TypeController extends Controller
         return new TypeResource($type);
     }
 
-
+/// 
     public function update(UpdateTypeRequest $request, Type $type)
     {
         $data = $request->validated();
     
-        // Use new category if provided, otherwise keep old one
         $categoryId = $data['category_id'] ?? $type->category_id;
     
         $category = \App\Models\Category::find($categoryId);
@@ -98,10 +100,16 @@ class TypeController extends Controller
             ], 422);
         }
     
-        // Handle icon update
         if ($request->hasFile('icon')) {
-            $type->deleteIcon();
-            $data['icon'] = $request->file('icon')->store('types', 'public');
+    
+            // delete old icon
+            ImageUploadService::delete($type->icon);
+    
+            $data['icon'] = ImageUploadService::upload(
+                $request->file('icon'),
+                'types',
+                600
+            );
         }
     
         $type->update($data);
@@ -132,7 +140,6 @@ class TypeController extends Controller
 
     public function destroy(Type $type)
     {
-        $type->deleteIcon();
         $type->delete();
     
         return response()->json([
@@ -150,8 +157,7 @@ class TypeController extends Controller
         $types = Type::whereIn('id', $request->ids)->get();
     
         foreach ($types as $type) {
-            $type->deleteIcon();
-            $type->delete();
+            $type->delete(); // model event deletes icon
         }
     
         return response()->json([

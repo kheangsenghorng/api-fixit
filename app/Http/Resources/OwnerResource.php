@@ -21,8 +21,11 @@ class OwnerResource extends JsonResource
             'map_url'        => $this->map_url,
 
             'images' => is_array($this->images)
-                ? collect($this->images)->map(fn ($image) => asset('storage/' . $image))->toArray()
-                : [],
+            ? collect($this->images)->map(fn ($img) => [
+                'url' => asset('storage/' . $img),
+                'path' => $img,
+            ])->toArray()
+            : [],
 
             'logo' => $this->logo
                 ? asset('storage/' . $this->logo)

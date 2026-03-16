@@ -11,6 +11,8 @@ use App\Http\Controllers\GeocodeController;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -206,7 +208,6 @@ use Illuminate\Support\Facades\Route;
     //     });
 
 // });
-
 
 
 
