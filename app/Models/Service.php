@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Services\ImageUploadService;
 
 class Service extends Model
 {
@@ -21,7 +22,13 @@ class Service extends Model
     protected $casts = [
         'images' => 'array',
     ];
-    // relationships
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
     public function owner()
     {
         return $this->belongsTo(Owner::class, 'owner_id');
@@ -35,5 +42,36 @@ class Service extends Model
     public function type()
     {
         return $this->belongsTo(Type::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Model Events
+    |--------------------------------------------------------------------------
+    */
+
+    protected static function booted()
+    {
+        // Global scope: only services with active category + type
+        static::addGlobalScope('activeCategoryType', function ($query) {
+
+            $query->whereHas('category', function ($q) {
+                $q->where('status', 'active');
+            });
+
+            $query->whereHas('type', function ($q) {
+                $q->where('status', 'active');
+            });
+
+        });
+
+        // Delete images when service deleted
+        static::deleting(function ($service) {
+
+            if (!empty($service->images)) {
+                ImageUploadService::delete($service->images);
+            }
+
+        });
     }
 }

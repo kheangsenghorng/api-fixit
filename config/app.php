@@ -55,6 +55,7 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     'dashboard_url' => env('DASHBOARD_URL'),
+    
 
     /*
     |--------------------------------------------------------------------------

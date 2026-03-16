@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminOwnerDocumentController;
 use App\Http\Controllers\Api\AuthController;
 
 use App\Http\Controllers\Api\TypeController;
@@ -30,6 +31,17 @@ Route::prefix('service')->group(function () {
 });
 
 
+// PUBLIC (signed link)
+Route::get('/owner-documents/{ownerDocument}/download',
+    [AdminOwnerDocumentController::class, 'download'])
+    ->middleware('signed')
+    ->whereNumber('ownerDocument')
+    ->name('admin.owner-documents.download');    
+
 // Category routes (public) - only active categories
 
 
+Route::prefix('service')->group(function () {
+
+    Route::get('/', [ServiceController::class, 'index']);
+});
