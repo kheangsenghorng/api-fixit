@@ -126,31 +126,32 @@ class OtpController extends Controller
     
             if ($status === 'code_valid') {
                 Cache::forget("otp_request:$phone");
-    
+            
                 $user = User::where('phone', $phone)->first();
-    
+            
                 if (!$user) {
                     return response()->json([
                         'success' => false,
                         'message' => 'User not found.'
                     ], 404);
                 }
-    
-                // Prevent double verification
-                if ($user->is_active) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Account already verified.'
-                    ], 400);
+            
+                // Optional: allow login even if already active
+                if (!$user->is_active) {
+                    $user->update([
+                        'is_active' => true,
+                    ]);
                 }
-    
-                $user->update([
-                    'is_active' => true,
-                ]);
-    
+            
+                // 🔑 GENERATE TOKEN HERE
+                $token = auth('api')->login($user);
+            
                 return response()->json([
                     'success' => true,
                     'message' => 'OTP verified successfully.',
+                    'access_token' => $token,
+                    'token_type' => 'bearer',
+                    'expires_in' => auth('api')->factory()->getTTL() * 60,
                     'user' => $user,
                 ]);
             }

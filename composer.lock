@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "83090067b5e8082e46f6ae902caf09ba",
+    "content-hash": "021f448dd61d185ffc0ac7d0177d1adb",
     "packages": [
         {
             "name": "brick/math",
@@ -2482,71 +2482,6 @@
                 }
             ],
             "time": "2026-01-02T08:56:05+00:00"
-        },
-        {
-            "name": "mtownsend/remove-bg",
-            "version": "2.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/mtownsend5512/remove-bg.git",
-                "reference": "ed3adad276d9262e3869dcdfee716919791a9e25"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/mtownsend5512/remove-bg/zipball/ed3adad276d9262e3869dcdfee716919791a9e25",
-                "reference": "ed3adad276d9262e3869dcdfee716919791a9e25",
-                "shasum": ""
-            },
-            "require": {
-                "guzzlehttp/guzzle": "^7",
-                "php": "~7.0|~8.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^6.4"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "Mtownsend\\RemoveBg\\Providers\\RemoveBgServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "files": [
-                    "src/helpers.php"
-                ],
-                "psr-4": {
-                    "Mtownsend\\RemoveBg\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mark Townsend",
-                    "email": "mtownsend5512@gmail.com",
-                    "role": "Developer"
-                }
-            ],
-            "description": "A PHP package to interface with the remove.bg api.",
-            "keywords": [
-                "api",
-                "background",
-                "bg",
-                "image",
-                "photo",
-                "php",
-                "remove",
-                "transparent"
-            ],
-            "support": {
-                "issues": "https://github.com/mtownsend5512/remove-bg/issues",
-                "source": "https://github.com/mtownsend5512/remove-bg/tree/2.0.1"
-            },
-            "time": "2023-06-08T14:34:34+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -6829,63 +6764,6 @@
                 "source": "https://github.com/tymondesigns/jwt-auth"
             },
             "time": "2026-03-06T09:50:45+00:00"
-        },
-        {
-            "name": "unimtx/uni-sdk",
-            "version": "v0.3.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/unimtx/uni-php-sdk.git",
-                "reference": "0d129401d14a6c447e5e7cbd3d66562d569cd3bf"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/unimtx/uni-php-sdk/zipball/0d129401d14a6c447e5e7cbd3d66562d569cd3bf",
-                "reference": "0d129401d14a6c447e5e7cbd3d66562d569cd3bf",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=7.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Uni\\": "./src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Unimatrix",
-                    "email": "dev@unimtx.com",
-                    "homepage": "https://github.com/unimtx",
-                    "role": "Developer"
-                }
-            ],
-            "description": "The official Unimatrix SDK for PHP.",
-            "homepage": "https://unimtx.com",
-            "keywords": [
-                "2fa",
-                "api",
-                "messaging",
-                "otp",
-                "sdk",
-                "sms",
-                "unimatrix",
-                "unisdk",
-                "verification"
-            ],
-            "support": {
-                "docs": "https://www.unimtx.com/docs",
-                "email": "support@unimtx.com",
-                "issues": "https://github.com/unimtx/uni-php-sdk/issues",
-                "source": "https://github.com/unimtx/uni-php-sdk/tree/v0.3.0"
-            },
-            "time": "2023-07-28T10:18:16+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

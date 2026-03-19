@@ -167,9 +167,7 @@ class OwnerController extends BaseController
             );
         });
     }
-    
 
-   
    /**
  * Display owner by user id
  */
