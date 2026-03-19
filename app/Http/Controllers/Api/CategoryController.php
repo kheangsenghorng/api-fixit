@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CategoryChanged;
+use App\Events\CategoryCreated;
+use App\Events\CategoryUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryStoreRequest;
 use App\Http\Requests\CategoryUpdateRequest;
@@ -10,13 +13,10 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-use function Symfony\Component\String\s;
-
 class CategoryController extends Controller
 {
     public function __construct()
     {
-        // Automatically apply CategoryPolicy to all resource methods
         $this->authorizeResource(Category::class, 'category');
     }
 
@@ -27,34 +27,45 @@ class CategoryController extends Controller
     {
         $query = Category::query();
 
-        // Search by name
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // Filter by group
         if ($request->filled('group')) {
             $query->where('category_group', $request->group);
         }
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-  
-        $categories = $query->latest()->paginate(10);
+
+        $categories = $query
+            ->orderByDesc('priority')
+            ->latest('id')
+            ->paginate(10);
 
         return CategoryResource::collection($categories);
     }
 
-    public function activeCategories()
+    /**
+     * GET active categories
+     */
+    public function activeCategories(Request $request)
     {
-        $categories = Category::where('status', 'active')->latest()->get();
-    
+        $categories = Category::where('status', 'active')
+            ->latest('id')
+            ->paginate($request->integer('per_page', 10));
+
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Active categories retrieved successfully',
-            'data'    => CategoryResource::collection($categories),
+            'data' => CategoryResource::collection($categories),
+            'meta' => [
+                'current_page' => $categories->currentPage(),
+                'last_page' => $categories->lastPage(),
+                'per_page' => $categories->perPage(),
+                'total' => $categories->total(),
+            ],
         ]);
     }
 
@@ -63,16 +74,21 @@ class CategoryController extends Controller
      */
     public function store(CategoryStoreRequest $request)
     {
-
         $data = $request->validated();
-
+    
         if ($request->hasFile('icon')) {
             $data['icon'] = $request->file('icon')->store('categories', 'public');
         }
-
-         $category = Category::create($data);
-
-        return new CategoryResource($category);
+    
+        $category = Category::create($data);
+        $category->refresh();
+    
+        broadcast(new CategoryCreated($category))->toOthers();
+    
+        return (new CategoryResource($category))
+            ->additional([
+                'message' => 'Category created successfully',
+            ]);
     }
 
     /**
@@ -89,38 +105,48 @@ class CategoryController extends Controller
     public function update(CategoryUpdateRequest $request, Category $category)
     {
         $data = $request->validated();
-    
+
         if ($request->hasFile('icon')) {
-    
             if ($category->icon) {
                 Storage::disk('public')->delete($category->icon);
             }
-    
+
             $data['icon'] = $request->file('icon')->store('categories', 'public');
         }
-    
+
         $category->update($data);
-    
-        return new CategoryResource($category);
+        $category->refresh();
+
+        broadcast(new CategoryChanged('changed', $category))->toOthers();
+
+        return (new CategoryResource($category))
+            ->additional([
+                'message' => 'Category updated successfully',
+            ]);
     }
 
     /**
-     * UPDATE category
+     * BULK UPDATE status
      */
-
     public function updateManyStatus(Request $request)
     {
         $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:categories,id',
-            'status' => 'required|in:active,inactive'
+            'ids' => ['required', 'array'],
+            'ids.*' => ['exists:categories,id'],
+            'status' => ['required', 'in:active,inactive'],
         ]);
-
+    
         Category::whereIn('id', $request->ids)
             ->update(['status' => $request->status]);
-
+    
+        $categories = Category::whereIn('id', $request->ids)->get();
+    
+        foreach ($categories as $category) {
+            broadcast(new CategoryUpdated(Category::find($category->id)))->toOthers();
+        }
+    
         return response()->json([
-            'message' => 'Category status updated successfully'
+            'message' => 'Category status updated successfully',
         ]);
     }
 
@@ -129,43 +155,50 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-         // Delete icon file if exists
+        $categoryData = clone $category;
+
         if ($category->icon) {
             Storage::disk('public')->delete($category->icon);
         }
 
-
         $category->delete();
 
+        broadcast(new CategoryChanged('deleted', $categoryData))->toOthers();
+
         return response()->json([
-            'message' => 'Category deleted successfully'
+            'message' => 'Category deleted successfully',
         ]);
     }
 
     /**
-     * DELETE category destroyMany
+     * BULK DELETE category
      */
     public function destroyMany(Request $request)
     {
         $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:categories,id'
+            'ids' => ['required', 'array'],
+            'ids.*' => ['exists:categories,id'],
         ]);
-    
+
         $categories = Category::whereIn('id', $request->ids)->get();
-    
+
         foreach ($categories as $category) {
             if ($category->icon) {
                 Storage::disk('public')->delete($category->icon);
             }
         }
-    
+
         Category::whereIn('id', $request->ids)->delete();
-    
+
+        foreach ($categories as $category) {
+            broadcast(new CategoryChanged('deleted', $category))->toOthers();
+        }
+
         return response()->json([
-            'message' => 'Categories deleted successfully'
+            'message' => 'Categories deleted successfully',
         ]);
     }
+
     /**
      * RESTORE soft deleted category
      */
@@ -176,8 +209,14 @@ class CategoryController extends Controller
         $this->authorize('restore', $category);
 
         $category->restore();
+        $category->refresh();
 
-        return new CategoryResource($category);
+        broadcast(new CategoryChanged('restored', $category))->toOthers();
+
+        return (new CategoryResource($category))
+            ->additional([
+                'message' => 'Category restored successfully',
+            ]);
     }
 
     /**
@@ -189,10 +228,18 @@ class CategoryController extends Controller
 
         $this->authorize('forceDelete', $category);
 
+        $categoryData = clone $category;
+
+        if ($category->icon) {
+            Storage::disk('public')->delete($category->icon);
+        }
+
         $category->forceDelete();
 
+        broadcast(new CategoryChanged('force_deleted', $categoryData))->toOthers();
+
         return response()->json([
-            'message' => 'Category permanently deleted'
+            'message' => 'Category permanently deleted',
         ]);
     }
 }
