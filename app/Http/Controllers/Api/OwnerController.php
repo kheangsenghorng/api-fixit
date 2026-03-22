@@ -158,7 +158,7 @@ class OwnerController extends BaseController
             |--------------------------------------------------------------------------
             */
     
-            broadcast(new OwnerCreated($owner))->toOthers();
+            broadcast(new OwnerCreated($owner));
     
             return $this->success(
                 new OwnerResource($owner),
@@ -262,28 +262,15 @@ class OwnerController extends BaseController
      */
     public function destroy(Owner $owner)
     {
-        if ($owner->status === 'approved') {
-            return $this->error(
-                'Approved owner cannot be deleted.',
-                null,
-                403
-            );
-        }
-
         return DB::transaction(function () use ($owner) {
-
             $this->deleteImages($owner->images);
             $this->deleteLogo($owner->logo);
-
-            $owner->delete();
-
-            return $this->success(
-                null,
-                'Owner deleted successfully'
-            );
+    
+            $owner->forceDelete();
+    
+            return $this->success(null, 'Owner permanently deleted successfully');
         });
     }
-
     /*
     |--------------------------------------------------------------------------
     | File Helpers
