@@ -33,6 +33,7 @@ class CategoryUpdated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
+            'action' => 'updated',
             'category' => (new CategoryResource($this->category))->resolve(),
         ];
     }

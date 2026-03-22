@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\CategoryChanged;
 use App\Events\CategoryCreated;
-use App\Events\CategoryUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryStoreRequest;
 use App\Http\Requests\CategoryUpdateRequest;
@@ -40,9 +39,8 @@ class CategoryController extends Controller
         }
 
         $categories = $query
-        
             ->latest('id')
-            ->paginate(10);
+            ->paginate($request->integer('per_page', 10));
 
         return CategoryResource::collection($categories);
     }
@@ -75,20 +73,19 @@ class CategoryController extends Controller
     public function store(CategoryStoreRequest $request)
     {
         $data = $request->validated();
-    
+
         if ($request->hasFile('icon')) {
             $data['icon'] = $request->file('icon')->store('categories', 'public');
         }
-    
+
         $category = Category::create($data);
         $category->refresh();
-    
+
         broadcast(new CategoryCreated($category))->toOthers();
-    
-        return (new CategoryResource($category))
-            ->additional([
-                'message' => 'Category created successfully',
-            ]);
+
+        return (new CategoryResource($category))->additional([
+            'message' => 'Category created successfully',
+        ]);
     }
 
     /**
@@ -117,12 +114,11 @@ class CategoryController extends Controller
         $category->update($data);
         $category->refresh();
 
-        broadcast(new CategoryChanged('changed', $category))->toOthers();
+        broadcast(new CategoryChanged('updated', $category))->toOthers();
 
-        return (new CategoryResource($category))
-            ->additional([
-                'message' => 'Category updated successfully',
-            ]);
+        return (new CategoryResource($category))->additional([
+            'message' => 'Category updated successfully',
+        ]);
     }
 
     /**
@@ -135,16 +131,16 @@ class CategoryController extends Controller
             'ids.*' => ['exists:categories,id'],
             'status' => ['required', 'in:active,inactive'],
         ]);
-    
+
         Category::whereIn('id', $request->ids)
             ->update(['status' => $request->status]);
-    
+
         $categories = Category::whereIn('id', $request->ids)->get();
-    
+
         foreach ($categories as $category) {
-            broadcast(new CategoryChanged('updated', $category->fresh()))->toOthers();
+            broadcast(new CategoryChanged('updated', $category))->toOthers();
         }
-    
+
         return response()->json([
             'message' => 'Category status updated successfully',
         ]);
@@ -213,10 +209,9 @@ class CategoryController extends Controller
 
         broadcast(new CategoryChanged('restored', $category))->toOthers();
 
-        return (new CategoryResource($category))
-            ->additional([
-                'message' => 'Category restored successfully',
-            ]);
+        return (new CategoryResource($category))->additional([
+            'message' => 'Category restored successfully',
+        ]);
     }
 
     /**

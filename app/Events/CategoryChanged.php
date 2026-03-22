@@ -14,13 +14,10 @@ class CategoryChanged implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public string $action;
-    public Category $category;
-
-    public function __construct(string $action, Category $category)
-    {
-        $this->action = $action;
-        $this->category = $category;
+    public function __construct(
+        public string $action,
+        public Category $category
+    ) {
     }
 
     public function broadcastOn(): array
