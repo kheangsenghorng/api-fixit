@@ -5,26 +5,19 @@ namespace App\Events;
 use App\Models\Owner;
 use App\Http\Resources\OwnerResource;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class OwnerCreated implements ShouldBroadcast
+class OwnerCreated implements ShouldBroadcastNow
 {
     use Dispatchable, SerializesModels;
 
-    public Owner $owner;
+    public function __construct(public Owner $owner) {}
 
-    public function __construct(Owner $owner)
+    public function broadcastOn(): PrivateChannel
     {
-        $this->owner = $owner;
-    }
-
-    public function broadcastOn(): array
-    {
-        return [
-            new PrivateChannel('admin.notifications'), // only admin listens here
-        ];
+        return new PrivateChannel('admin.notifications');
     }
 
     public function broadcastAs(): string
@@ -35,9 +28,7 @@ class OwnerCreated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'owner' => new OwnerResource($this->owner),
-            'message' => 'A new owner has been created.',
-            'created_at' => now()->toDateTimeString(),
+            'owner' => OwnerResource::make($this->owner)->resolve(),
         ];
     }
 }

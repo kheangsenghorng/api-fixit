@@ -1,11 +1,23 @@
 <?php
 
-
 use Illuminate\Support\Facades\Broadcast;
 
-// Only admin can listen to this channel
 Broadcast::channel('admin.notifications', function ($user) {
-    return $user->role === 'admin'; // adjust to your role check
-    // or: return $user->hasRole('admin');
-    // or: return $user->is_admin === true;
-});
+    \Log::info('=== BROADCAST AUTH ===', [
+        'user_id'   => $user?->id,
+        'user_role' => $user?->role,
+        'user'      => $user,
+    ]);
+
+    if ($user === null) {
+        \Log::warning('Broadcast auth FAILED: user is null');
+        return false;
+    }
+
+    if ($user->role !== 'admin') {
+        \Log::warning('Broadcast auth FAILED: role is ' . $user->role);
+        return false;
+    }
+
+    return true;
+}, ['guards' => ['api']]);

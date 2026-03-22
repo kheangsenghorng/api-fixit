@@ -40,7 +40,7 @@ class CategoryController extends Controller
         }
 
         $categories = $query
-            ->orderByDesc('priority')
+        
             ->latest('id')
             ->paginate(10);
 
@@ -59,7 +59,7 @@ class CategoryController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Active categories retrieved successfully',
-            'data' => CategoryResource::collection($categories),
+            'data' => CategoryResource::collection($categories)->resolve(),
             'meta' => [
                 'current_page' => $categories->currentPage(),
                 'last_page' => $categories->lastPage(),
@@ -142,7 +142,7 @@ class CategoryController extends Controller
         $categories = Category::whereIn('id', $request->ids)->get();
     
         foreach ($categories as $category) {
-            broadcast(new CategoryUpdated(Category::find($category->id)))->toOthers();
+            broadcast(new CategoryChanged('updated', $category->fresh()))->toOthers();
         }
     
         return response()->json([

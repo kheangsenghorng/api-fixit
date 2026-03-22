@@ -211,8 +211,6 @@ use Illuminate\Support\Facades\Broadcast;
 
 
 
-
-
 Route::prefix('')->group(function () {
     require __DIR__.'/api/public.php';
     require __DIR__.'/api/auth.php';
