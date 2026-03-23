@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\CategoryChanged;
-use App\Events\CategoryCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryStoreRequest;
 use App\Http\Requests\CategoryUpdateRequest;
@@ -81,8 +79,6 @@ class CategoryController extends Controller
         $category = Category::create($data);
         $category->refresh();
 
-        broadcast(new CategoryCreated($category))->toOthers();
-
         return (new CategoryResource($category))->additional([
             'message' => 'Category created successfully',
         ]);
@@ -114,8 +110,6 @@ class CategoryController extends Controller
         $category->update($data);
         $category->refresh();
 
-        broadcast(new CategoryChanged('updated', $category))->toOthers();
-
         return (new CategoryResource($category))->additional([
             'message' => 'Category updated successfully',
         ]);
@@ -132,13 +126,12 @@ class CategoryController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
-        Category::whereIn('id', $request->ids)
-            ->update(['status' => $request->status]);
-
         $categories = Category::whereIn('id', $request->ids)->get();
 
         foreach ($categories as $category) {
-            broadcast(new CategoryChanged('updated', $category))->toOthers();
+            $category->update([
+                'status' => $request->status,
+            ]);
         }
 
         return response()->json([
@@ -151,15 +144,11 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        $categoryData = clone $category;
-
         if ($category->icon) {
             Storage::disk('public')->delete($category->icon);
         }
 
         $category->delete();
-
-        broadcast(new CategoryChanged('deleted', $categoryData))->toOthers();
 
         return response()->json([
             'message' => 'Category deleted successfully',
@@ -182,12 +171,8 @@ class CategoryController extends Controller
             if ($category->icon) {
                 Storage::disk('public')->delete($category->icon);
             }
-        }
 
-        Category::whereIn('id', $request->ids)->delete();
-
-        foreach ($categories as $category) {
-            broadcast(new CategoryChanged('deleted', $category))->toOthers();
+            $category->delete();
         }
 
         return response()->json([
@@ -207,8 +192,6 @@ class CategoryController extends Controller
         $category->restore();
         $category->refresh();
 
-        broadcast(new CategoryChanged('restored', $category))->toOthers();
-
         return (new CategoryResource($category))->additional([
             'message' => 'Category restored successfully',
         ]);
@@ -223,15 +206,11 @@ class CategoryController extends Controller
 
         $this->authorize('forceDelete', $category);
 
-        $categoryData = clone $category;
-
         if ($category->icon) {
             Storage::disk('public')->delete($category->icon);
         }
 
         $category->forceDelete();
-
-        broadcast(new CategoryChanged('force_deleted', $categoryData))->toOthers();
 
         return response()->json([
             'message' => 'Category permanently deleted',
