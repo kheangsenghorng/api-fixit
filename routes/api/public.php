@@ -44,6 +44,7 @@ Route::prefix('category')->group(function () {
 
 // 🧩 Type
 Route::prefix('type')->group(function () {
+    Route::get('/', [TypeController::class, 'index']);
     Route::get('/active', [TypeController::class, 'active']);
 });
 

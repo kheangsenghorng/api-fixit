@@ -304,6 +304,10 @@ class ServiceController extends Controller
         if ($request->filled('type_id')) {
             $query->where('type_id', $request->type_id);
         }
+
+        if ($request->filled('category_id')) {
+           $query->where('category_id',$request->category_id);
+        }
     
         $services = $query->latest()->paginate(10);
     
@@ -321,9 +325,7 @@ class ServiceController extends Controller
     
         $data['status'] = 'active';
     
-        // Admin can select owner
         if (Auth::user()->role === 'admin') {
-    
             if (!$request->owner_id) {
                 return response()->json([
                     'success' => false,
@@ -332,24 +334,20 @@ class ServiceController extends Controller
             }
     
             $data['owner_id'] = $request->owner_id;
-    
         } else {
-    
             $owner = Owner::where('user_id', auth()->id())->firstOrFail();
             $data['owner_id'] = $owner->id;
-    
         }
     
         if ($request->hasFile('images')) {
-    
             $data['images'] = ImageUploadService::uploadMultiple(
                 $request->file('images'),
                 'services'
             );
-    
         }
     
         $service = Service::create($data);
+        $service->load(['owner', 'category', 'type']);
     
         return response()->json([
             'success' => true,
@@ -374,16 +372,12 @@ class ServiceController extends Controller
     {
         $data = $request->validated();
     
-        // If new images uploaded
         if ($request->hasFile('images')) {
-    
-            // Upload new images
             $newImages = ImageUploadService::uploadMultiple(
                 $request->file('images'),
                 'services'
             );
     
-            // Merge old images + new images
             $data['images'] = array_merge(
                 $service->images ?? [],
                 $newImages
@@ -391,6 +385,7 @@ class ServiceController extends Controller
         }
     
         $service->update($data);
+        $service->refresh()->load(['owner', 'category', 'type']);
     
         return response()->json([
             'success' => true,
@@ -402,45 +397,47 @@ class ServiceController extends Controller
 
     public function destroy(Service $service)
     {
-        // delete images
         ImageUploadService::delete($service->images);
-
+    
         $service->delete();
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Service deleted successfully'
         ]);
     }
 
-
     public function destroyMany(Request $request)
     {
         $ids = $request->ids;
-
+    
         $services = Service::whereIn('id', $ids)->get();
-
+    
         foreach ($services as $service) {
-
             ImageUploadService::delete($service->images);
-
             $service->delete();
         }
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Services deleted successfully'
         ]);
     }
-
     public function updateManyStatus(Request $request)
     {
-        $ids = $request->ids;
-        $status = $request->status;
-    
-        Service::whereIn('id', $ids)->update([
-            'status' => $status
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:services,id',
+            'status' => 'required|in:active,paused,draft'
         ]);
+    
+        $services = Service::whereIn('id', $request->ids)->get();
+    
+        foreach ($services as $service) {
+            $service->update([
+                'status' => $request->status
+            ]);
+        }
     
         return response()->json([
             'success' => true,
@@ -449,41 +446,36 @@ class ServiceController extends Controller
     }
 
     public function deleteImage(Request $request, Service $service)
-{
-    $request->validate([
-        'image' => 'required|string'
-    ]);
-
-    $image = $request->image;
-
-    $images = $service->images ?? [];
-
-    // check image exists in service
-    if (!in_array($image, $images)) {
+    {
+        $request->validate([
+            'image' => 'required|string'
+        ]);
+    
+        $image = $request->image;
+        $images = $service->images ?? [];
+    
+        if (!in_array($image, $images)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Image not found in service'
+            ], 404);
+        }
+    
+        ImageUploadService::delete($image);
+    
+        $images = array_values(array_filter($images, function ($img) use ($image) {
+            return $img !== $image;
+        }));
+    
+        $service->update([
+            'images' => $images
+        ]);
+    
         return response()->json([
-            'success' => false,
-            'message' => 'Image not found in service'
-        ], 404);
-    }
-
-    // delete file from storage
-    ImageUploadService::delete($image);
-
-    // remove image from array
-    $images = array_values(array_filter($images, function ($img) use ($image) {
-        return $img !== $image;
-    }));
-
-    // update service
-    $service->update([
-        'images' => $images
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Image deleted successfully',
-        'data' => $images
-    ]);
+            'success' => true,
+            'message' => 'Image deleted successfully',
+            'data' => $images
+        ]);
     }
 
 }
