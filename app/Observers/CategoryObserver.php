@@ -9,26 +9,26 @@ class CategoryObserver
 {
     public function created(Category $category): void
     {
-        broadcast(CategoryChanged::fromModel('created', $category))->toOthers();
+        broadcast(CategoryChanged::fromModel('created', $category));
     }
 
     public function updated(Category $category): void
     {
-        broadcast(CategoryChanged::fromModel('updated', $category))->toOthers();
+        broadcast(CategoryChanged::fromModel('updated', $category));
     }
 
     public function deleted(Category $category): void
     {
-        broadcast(CategoryChanged::fromModel('deleted', $category))->toOthers();
+        broadcast(CategoryChanged::fromModel('deleted', $category));
     }
 
     public function restored(Category $category): void
     {
-        broadcast(CategoryChanged::fromModel('restored', $category))->toOthers();
+        broadcast(CategoryChanged::fromModel('restored', $category));
     }
 
     public function forceDeleted(Category $category): void
     {
-        broadcast(CategoryChanged::fromModel('force_deleted', $category))->toOthers();
+        broadcast(CategoryChanged::fromModel('force_deleted', $category));
     }
 }
