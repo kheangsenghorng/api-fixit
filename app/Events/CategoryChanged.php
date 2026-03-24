@@ -16,8 +16,16 @@ class CategoryChanged implements ShouldBroadcast
 
     public function __construct(
         public string $action,
-        public Category $category
+        public array $category
     ) {
+    }
+
+    public static function fromModel(string $action, Category $category): self
+    {
+        return new self(
+            $action,
+            (new CategoryResource($category))->resolve()
+        );
     }
 
     public function broadcastOn(): array
@@ -36,7 +44,7 @@ class CategoryChanged implements ShouldBroadcast
     {
         return [
             'action' => $this->action,
-            'category' => (new CategoryResource($this->category))->resolve(),
+            'category' => $this->category,
         ];
     }
 }
