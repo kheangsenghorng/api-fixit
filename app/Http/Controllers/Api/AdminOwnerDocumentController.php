@@ -10,6 +10,7 @@ use App\Models\OwnerDocument;
 use App\Services\EncryptedStorage;
 use App\Services\TelegramNotifier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
 
@@ -214,16 +215,30 @@ class AdminOwnerDocumentController extends Controller
 
     public function review(AdminOwnerDocumentReviewRequest $request, OwnerDocument $ownerDocument)
     {
-        $ownerDocument->status = $request->status;
-
-        $ownerDocument->reviewed_by = $request->user()->id;
-        $ownerDocument->reviewed_at = now();
-        $ownerDocument->rejection_reason = $request->status === 'rejected'
-            ? $request->rejection_reason
-            : null;
-
-        $ownerDocument->save();
-
+        DB::transaction(function () use ($request, $ownerDocument) {
+            $ownerDocument->status = $request->status;
+            $ownerDocument->reviewed_by = $request->user()->id;
+            $ownerDocument->reviewed_at = now();
+            $ownerDocument->rejection_reason = $request->status === 'rejected'
+                ? $request->rejection_reason
+                : null;
+    
+            $ownerDocument->save();
+    
+            // If approved, update related user role to owner
+            if ($request->status === 'approved') {
+                $ownerDocument->loadMissing('owner.user');
+    
+                if ($ownerDocument->owner?->user) {
+                    $ownerDocument->owner->user->update([
+                        'role' => 'owner',
+                    ]);
+                }
+            }
+        });
+    
+        $ownerDocument->load('owner.user');
+    
         return response()->json([
             'message' => 'Document reviewed successfully',
             'data' => new OwnerDocumentResource($ownerDocument),
