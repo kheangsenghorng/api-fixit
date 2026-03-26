@@ -20,7 +20,7 @@ class OwnerStoreRequest extends FormRequest
             'user_id' => [
                 'required',
                 Rule::exists('users', 'id')->where(fn ($q) =>
-                    $q->where('role', 'owner')
+                    $q->where('role', 'customer')
                 ),
                 Rule::unique('owners', 'user_id'),
             ],
