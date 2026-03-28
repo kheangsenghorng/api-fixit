@@ -21,3 +21,4 @@ Broadcast::channel('admin.notifications', function ($user) {
 
     return true;
 }, ['guards' => ['api']]);
+
