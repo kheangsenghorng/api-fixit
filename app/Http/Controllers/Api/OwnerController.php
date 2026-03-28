@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\OwnerChanged;
 use App\Http\Controllers\Api\BaseController;
 use App\Models\Owner;
 use Illuminate\Http\Request;
@@ -128,45 +129,48 @@ class OwnerController extends BaseController
      */
 
 
-    public function store(OwnerStoreRequest $request)
-    {
-        return DB::transaction(function () use ($request) {
-    
-            $data = $request->validated();
-    
-            $uploaded = false;
-    
-            if ($request->hasFile('images')) {
-                $data['images'] = $this->uploadImages($request);
-                $uploaded = true;
-            }
-    
-            if ($request->hasFile('logo')) {
-                $data['logo'] = $this->uploadLogo($request);
-                $uploaded = true;
-            }
-    
-            $data['status'] = $uploaded
-                ? Owner::STATUS_COMPLETED
-                : Owner::STATUS_PENDING;
-    
-            $owner = Owner::create($data)->load('user');
-    
-            /*
-            |--------------------------------------------------------------------------
-            | Broadcast realtime event
-            |--------------------------------------------------------------------------
-            */
-    
-            broadcast(new OwnerCreated($owner));
-    
-            return $this->success(
-                new OwnerResource($owner),
-                'Owner created successfully',
-                201
-            );
-        });
-    }
+     public function store(OwnerStoreRequest $request)
+     {
+         return DB::transaction(function () use ($request) {
+     
+             $data     = $request->validated();
+             $uploaded = false;
+     
+             if ($request->hasFile('images')) {
+                 $data['images'] = $this->uploadImages($request);
+                 $uploaded = true;
+             }
+     
+             if ($request->hasFile('logo')) {
+                 $data['logo'] = $this->uploadLogo($request);
+                 $uploaded = true;
+             }
+     
+             $data['status'] = $uploaded
+                 ? Owner::STATUS_COMPLETED
+                 : Owner::STATUS_PENDING;
+     
+             $owner = Owner::create($data)->load('user');
+
+     
+             /*
+             |--------------------------------------------------------------------------
+             | Broadcast realtime event
+             |--------------------------------------------------------------------------
+             */
+     
+             DB::afterCommit(function () use ($owner) {
+                broadcast(new OwnerChanged('created', $owner));
+                broadcast(new OwnerCreated($owner));
+            });
+     
+             return $this->success(
+                 new OwnerResource($owner),
+                 'Owner created successfully',
+                 201
+             );
+         });
+     }
 
    /**
  * Display owner by user id
