@@ -6,7 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminOwnerDocumentReviewRequest;
 use App\Http\Resources\OwnerDocumentResource;
 use App\Http\Resources\OwnerOwnerDocumentResource;
+use App\Mail\OwnerDocumentMissingMail;
+use App\Mail\OwnerDocumentReviewedMail;
+use App\Models\Owner;
 use App\Models\OwnerDocument;
+use Illuminate\Support\Facades\Mail;
 use App\Services\EncryptedStorage;
 use App\Services\TelegramNotifier;
 use Illuminate\Http\Request;
@@ -61,6 +65,73 @@ class AdminOwnerDocumentController extends Controller
         return $isAdmin
             ? OwnerDocumentResource::collection($paginated)
             : OwnerOwnerDocumentResource::collection($paginated);
+    }
+
+
+    public function notifyOwnerMissingDocuments(Request $request)
+    {
+        $request->validate([
+            'owner_id' => ['required', 'exists:owners,id'],
+            'type' => ['required', 'in:missing_documents,missing_logo,need_more_documents'],
+            'message_text' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $owner = Owner::with('user')->findOrFail((int) $request->owner_id);
+
+        if (! $owner->user || ! $owner->user->email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Owner email not found.',
+            ], 404);
+        }
+
+        $hasDocuments = OwnerDocument::where('owner_id', $owner->id)->exists();
+
+        // Example: adjust this if your owner/company logo is stored somewhere else
+        $hasLogo = ! empty($owner->logo);
+
+        $type = $request->type;
+        $messageText = $request->message_text;
+
+        if ($type === 'missing_documents') {
+            if ($hasDocuments) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This owner already uploaded documents.',
+                ], 400);
+            }
+
+            $messageText = $messageText ?: 'Our records show that you have not uploaded your verification documents yet. Please upload them as soon as possible.';
+        }
+
+        if ($type === 'missing_logo') {
+            if ($hasLogo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This owner already uploaded logo.',
+                ], 400);
+            }
+
+            $messageText = $messageText ?: 'Our records show that your logo has not been uploaded yet. Please upload your logo as soon as possible.';
+        }
+
+        if ($type === 'need_more_documents') {
+            $messageText = $messageText ?: 'Additional verification documents are required. Please log in and upload the requested documents as soon as possible.';
+        }
+
+        Mail::to($owner->user->email)->send(
+            new OwnerDocumentMissingMail($owner->user, $messageText)
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reminder email sent to owner successfully.',
+            'data' => [
+                'owner_id' => $owner->id,
+                'owner_email' => $owner->user->email,
+                'type' => $type,
+            ],
+        ]);
     }
 
     public function store(Request $request)
@@ -213,38 +284,56 @@ class AdminOwnerDocumentController extends Controller
         ]);
     }
 
-    public function review(AdminOwnerDocumentReviewRequest $request, OwnerDocument $ownerDocument)
-    {
-        DB::transaction(function () use ($request, $ownerDocument) {
-            $ownerDocument->status = $request->status;
-            $ownerDocument->reviewed_by = $request->user()->id;
-            $ownerDocument->reviewed_at = now();
-            $ownerDocument->rejection_reason = $request->status === 'rejected'
-                ? $request->rejection_reason
-                : null;
-    
-            $ownerDocument->save();
-    
-            // If approved, update related user role to owner
-            if ($request->status === 'approved') {
-                $ownerDocument->loadMissing('owner.user');
-    
-                if ($ownerDocument->owner?->user) {
-                    $ownerDocument->owner->user->update([
-                        'role' => 'owner',
-                    ]);
-                }
-            }
-        });
-    
-        $ownerDocument->load('owner.user');
-    
-        return response()->json([
-            'message' => 'Document reviewed successfully',
-            'data' => new OwnerDocumentResource($ownerDocument),
-        ]);
+   public function review(AdminOwnerDocumentReviewRequest $request, OwnerDocument $ownerDocument)
+ {
+    DB::transaction(function () use ($request, $ownerDocument) {
+        $ownerDocument->status = $request->status;
+        $ownerDocument->reviewed_by = $request->user()->id;
+        $ownerDocument->reviewed_at = now();
+        $ownerDocument->rejection_reason = $request->status === 'rejected'
+            ? $request->rejection_reason
+            : null;
+
+        $ownerDocument->save();
+
+        $ownerDocument->loadMissing('owner.user');
+
+        // If approved, update related user role to owner
+        if (
+            $request->status === 'approved' &&
+            $ownerDocument->owner?->user
+        ) {
+            $ownerDocument->owner->user->update([
+                'role' => 'owner',
+            ]);
+        }
+    });
+
+    $ownerDocument->load('owner.user');
+
+    // Send email to owner
+    if ($ownerDocument->owner?->user?->email) {
+        $messageText = match ($ownerDocument->status) {
+            'approved' => 'Your verification document has been approved successfully.',
+            'rejected' => 'Your verification document has been rejected. Reason: ' . ($ownerDocument->rejection_reason ?? 'No reason provided.'),
+            default => 'Your verification document status has been updated.',
+        };
+
+        Mail::to($ownerDocument->owner->user->email)->send(
+            new OwnerDocumentReviewedMail(
+                $ownerDocument->owner->user,
+                $ownerDocument,
+                $messageText
+            )
+        );
     }
 
+    return response()->json([
+        'success' => true,
+        'message' => 'Document reviewed successfully',
+        'data' => new OwnerDocumentResource($ownerDocument),
+    ]);
+}
     public function download(Request $request, OwnerDocument $ownerDocument)
     {
         /**

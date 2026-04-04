@@ -44,6 +44,29 @@ class CategoryController extends Controller
     }
 
     /**
+     * Get category statistics.
+     */
+    public function stats()
+    {
+        $stats = Category::selectRaw("
+                COUNT(*) as total,
+                COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+                COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive
+            ")
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category statistics retrieved successfully.',
+            'data' => [
+                'total_categories' => (int) $stats->total,
+                'active_categories' => (int) $stats->active,
+                'inactive_categories' => (int) $stats->inactive,
+            ],
+        ]);
+    }
+
+    /**
      * GET active categories
      */
     public function activeCategories(Request $request)

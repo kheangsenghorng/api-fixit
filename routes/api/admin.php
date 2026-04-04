@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\AdminOwnerDocumentController;
+use App\Http\Controllers\Api\OwnerDocumentController;
+use App\Http\Controllers\Api\ServiceBookingController;
+use App\Http\Controllers\Api\ServiceBookingProviderController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Middleware\CheckOwnerDocument;
@@ -35,6 +38,7 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
     Route::prefix('owners')->group(function () {
 
         Route::get('/', [OwnerController::class, 'index']);
+        
         Route::post('/', [OwnerController::class, 'store']);
         Route::get('/{owner}', [OwnerController::class, 'show'])
             ->whereNumber('owner');
@@ -61,7 +65,7 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
         // ✅ OTP + download (if you use them)
         Route::post('/{ownerDocument}/otp', [AdminOwnerDocumentController::class, 'sendOtp'])
             ->whereNumber('ownerDocument');
-
+        Route::post('/notify-missing', [AdminOwnerDocumentController::class, 'notifyOwnerMissingDocuments']);
         Route::post('/{ownerDocument}/verify-otp', [AdminOwnerDocumentController::class, 'verifyOtp'])
             ->whereNumber('ownerDocument');
 
@@ -78,8 +82,8 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
 
         Route::get('/', [CategoryController::class, 'index']);
         Route::post('/', [CategoryController::class, 'store']);
+        Route::get('/stats', [CategoryController::class, 'stats']);
         Route::get('/active', [CategoryController::class, 'activeCategories']);
-
         Route::delete('/bulk', [CategoryController::class, 'destroyMany']);
         Route::patch('/status/bulk', [CategoryController::class, 'updateManyStatus']);
 
@@ -101,6 +105,7 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
     Route::prefix('types')->group(function () {
 
         Route::get('/', [TypeController::class, 'index']);
+        Route::get('/stats', [TypeController::class, 'stats']);
         Route::get('/active', [TypeController::class, 'active']);
         Route::post('/', [TypeController::class, 'store']);
     
@@ -149,5 +154,19 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
             ->whereNumber('service');
     });
 
+    //
+    Route::apiResource('service-bookings', ServiceBookingController::class);
+
+    Route::apiResource('service-booking-providers', ServiceBookingProviderController::class);
+
+    Route::get(
+        'service-booking-providers/booking/{bookingId}',
+        [ServiceBookingProviderController::class, 'showByBookingId']
+    );
+    
+    Route::get(
+        'service-booking-providers/provider/{providerId}',
+        [ServiceBookingProviderController::class, 'showByProviderId']
+    );
 
 });

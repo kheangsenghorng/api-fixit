@@ -33,4 +33,8 @@ class Provider extends Model
     {
         return $this->belongsTo(Category::class);
     }
+    public function bookingProviders()
+{
+    return $this->hasMany(ServiceBookingProvider::class, 'provider_id');
+}
 }
