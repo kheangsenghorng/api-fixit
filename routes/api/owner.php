@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
+use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Api\UserController;
@@ -104,5 +105,12 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
 
         Route::delete('/{service}/image  ', [ServiceController::class, 'deleteImage']);   
     });
+
+    // service bookings
+    Route::prefix('service-bookings')->group(function(){
+        Route::get('/owner/{ownerId}',[ServiceBookingController::class, 'showByIdOwner']);
+        Route::patch('/',[ServiceBookingController::class, 'showByIdOwner']);
+     });
+   
 
 });

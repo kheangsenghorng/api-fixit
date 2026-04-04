@@ -24,6 +24,30 @@ class TypeController extends Controller
         return TypeResource::collection($types);
     }
 
+
+    /**
+     * Get type statistics.
+     */
+    public function stats()
+    {
+        $stats = Type::selectRaw('
+                COUNT(*) as total_types,
+                SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active_types,
+                SUM(CASE WHEN status = "inactive" THEN 1 ELSE 0 END) as inactive_types
+            ')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Type statistics retrieved successfully.',
+            'data' => [
+                'total_types' => (int) $stats->total_types,
+                'active_types' => (int) $stats->active_types,
+                'inactive_types' => (int) $stats->inactive_types,
+            ]
+        ]);
+    }
+
     public function active(Request $request)
     {
         $query = Type::with('category')
