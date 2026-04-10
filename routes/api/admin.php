@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\AdminOwnerDocumentController;
+use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\CouponUsageController;
 use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
@@ -168,5 +170,8 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
         'service-booking-providers/provider/{providerId}',
         [ServiceBookingProviderController::class, 'showByProviderId']
     );
+
+
+
 
 });

@@ -11,24 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('service_booking_providers')) {
+            return;
+        }
+    
         Schema::create('service_booking_providers', function (Blueprint $table) {
             $table->id();
-
+    
             $table->foreignId('service_booking_id')
                 ->constrained('service_bookings')
                 ->onDelete('cascade');
-
+    
             $table->foreignId('provider_id')
                 ->constrained('providers')
                 ->onDelete('cascade');
-
+    
             $table->foreignId('assigned_by')
                 ->nullable()
                 ->constrained('owners')
                 ->nullOnDelete();
-
+    
             $table->enum('role', ['main', 'helper'])->default('helper');
-
+    
             $table->enum('status', [
                 'assigned',
                 'accepted',
@@ -38,12 +42,11 @@ return new class extends Migration
                 'completed',
                 'declined'
             ])->default('assigned');
-
+    
             $table->timestamp('assigned_at')->nullable();
             $table->timestamp('completed_at')->nullable();
-
             $table->timestamps();
-
+    
             $table->unique(['service_booking_id', 'provider_id'], 'sbp_booking_provider_unique');
         });
     }

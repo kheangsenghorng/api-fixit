@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Services\ImageUploadService;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class Service extends Model
 {
@@ -13,25 +15,47 @@ class Service extends Model
         'type_id',
         'title',
         'description',
-        'status',
         'base_price',
+        'status',
+        'images',
         'duration',
-        'images'
+        'images',
+        'lat',
+        'lng',
     ];
 
     protected $casts = [
         'images' => 'array',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
+    protected static function booted()
+    {
+        // Apply active category/type filter only for guest or customer
+        static::addGlobalScope('activeCategoryType', function (Builder $query) {
+            $user = Auth::user();
+
+            if (!$user || $user->role === 'customer') {
+                $query->whereHas('category', function ($q) {
+                    $q->where('status', 'active');
+                });
+
+                $query->whereHas('type', function ($q) {
+                    $q->where('status', 'active');
+                });
+            }
+        });
+
+        // Delete images when service deleted
+        static::deleting(function ($service) {
+            if (!empty($service->images)) {
+                ImageUploadService::delete($service->images);
+            }
+        });
+    }
 
     public function owner()
     {
-        return $this->belongsTo(Owner::class, 'owner_id');
+        return $this->belongsTo(Owner::class);
     }
 
     public function category()
@@ -44,34 +68,8 @@ class Service extends Model
         return $this->belongsTo(Type::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Model Events
-    |--------------------------------------------------------------------------
-    */
-
-    protected static function booted()
-    {
-        // Global scope: only services with active category + type
-        static::addGlobalScope('activeCategoryType', function ($query) {
-
-            $query->whereHas('category', function ($q) {
-                $q->where('status', 'active');
-            });
-
-            $query->whereHas('type', function ($q) {
-                $q->where('status', 'active');
-            });
-
-        });
-
-        // Delete images when service deleted
-        static::deleting(function ($service) {
-
-            if (!empty($service->images)) {
-                ImageUploadService::delete($service->images);
-            }
-
-        });
-    }
+    // public function reviews()
+    // {
+    //     return $this->hasMany(Review::class);
+    // }
 }

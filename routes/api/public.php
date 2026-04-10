@@ -52,6 +52,7 @@ Route::prefix('type')->group(function () {
 Route::prefix('service')->group(function () {
     Route::get('/', [ServiceController::class, 'index']);
     Route::get('/active', [ServiceController::class, 'activeServices']);
+    Route::get('/{sevive}/serviceId',[ServiceController::class,"show"]);
 });
 
 // 📄 Signed download

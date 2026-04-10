@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\CouponUsageController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\ServiceBookingController;
@@ -111,6 +113,12 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
         Route::get('/owner/{ownerId}',[ServiceBookingController::class, 'showByIdOwner']);
         Route::patch('/',[ServiceBookingController::class, 'showByIdOwner']);
      });
+
+
+
+     ///coupons
+    Route::apiResource('coupons', CouponController::class);
+    Route::apiResource('coupon-usages', CouponUsageController::class);
    
 
 });

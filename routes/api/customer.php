@@ -21,4 +21,5 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':custom
        Route::post('/',[ServiceBookingController::class,'store']);
      });
 
+     
 });
