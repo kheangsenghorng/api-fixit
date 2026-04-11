@@ -19,13 +19,16 @@ jobs:
           port: 65002
           timeout: 30s
           command_timeout: 10m
+          script_stop: true
           script: |
-            cd domains/servicemeite.io/public_html/fixit
-            
-            git reset --hard
-            git pull origin master
+            set -e
 
-            composer install --no-dev --optimize-autoloader
+            cd ~/domains/servicemeite.io/public_html/fixit
+
+            git fetch origin master
+            git reset --hard origin/master
+
+            composer install --no-dev --optimize-autoloader --no-interaction
 
             php artisan migrate --force
             php artisan config:clear
