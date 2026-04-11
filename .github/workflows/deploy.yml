@@ -23,7 +23,15 @@ jobs:
           script: |
             set -e
 
+            echo "User: $(whoami)"
+            echo "Home: $HOME"
+
             cd ~/domains/servicemeite.io/public_html/fixit
+            pwd
+            ls -la
+
+            git remote -v
+            git branch -a
 
             git fetch origin master
             git reset --hard origin/master
