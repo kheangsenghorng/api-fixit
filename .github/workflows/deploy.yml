@@ -10,17 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get runner IP
-        id: ip
-        run: echo "ipv4=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
-
-      - name: Whitelist IP on Hostinger
-        run: |
-          curl -s -X POST "https://api.hostinger.com/v1/servers/ssh/whitelist" \
-            -H "Authorization: Bearer ${{ secrets.HOSTINGER_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"ip": "${{ steps.ip.outputs.ipv4 }}"}'
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -31,6 +20,7 @@ jobs:
           timeout: 30s
           command_timeout: 20m
           script_stop: true
+          debug: true
           script: |
             set -e
             cd ~/domains/servicemeite.io/public_html/fixit
