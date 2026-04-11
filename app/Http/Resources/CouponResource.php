@@ -25,7 +25,10 @@ class CouponResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 
-            'owner' => new UserResource($this->whenLoaded('owner')),
+            'users_count' => $this->users_count ?? 0,
+            'total_times_used' => $this->total_times_used ?? 0,
+
+            'owner' => new OwnerResource($this->whenLoaded('owner')),
             'usages' => CouponUsageResource::collection($this->whenLoaded('usages')),
         ];
     }

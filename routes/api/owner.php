@@ -117,8 +117,25 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
 
 
      ///coupons
-    Route::apiResource('coupons', CouponController::class);
     Route::apiResource('coupon-usages', CouponUsageController::class);
-   
+
+    Route::prefix('coupons')->group(function () {
+    
+        Route::get('/', [CouponController::class, 'index']);
+
+        Route::get('/show-by-owner/{owner_id}',[CouponController::class, 'showByIdOwner']);
+
+        Route::get('/stats-by-owner',[CouponController::class,'statsByIdOwner']);
+
+
+        Route::get('/{coupon}', [CouponController::class, 'show'])
+            ->whereNumber('coupon');
+    
+        Route::put('/{coupon}', [CouponController::class, 'update'])
+            ->whereNumber('coupon');
+    
+        Route::delete('/{coupon}', [CouponController::class, 'destroy'])
+            ->whereNumber('coupon');
+    });
 
 });

@@ -48,6 +48,7 @@ View the full system flow (Flutter → Laravel → Pusher → Next.js):
 
 Open and edit using:
 
+
 https://app.diagrams.net  
 (File → Open From → Google Drive / URL)
 
@@ -122,3 +123,6 @@ Reusable table controller for user actions
 - Optional rejection reason
 - OTP-protected document download
 - Signed temporary download URL
+
+
+php artisan serve --host=0.0.0.0 --port=8000
