@@ -17,6 +17,7 @@ class ServiceBookingController extends Controller
             'user',
             'service.category',
             'service.type',
+            'payment'
         ])
             ->latest()
             ->paginate(10);
@@ -104,4 +105,55 @@ class ServiceBookingController extends Controller
             'message' => 'Service booking deleted successfully.'
         ], 200);
     }
+
+
+    // fined by owner id
+// find by owner id
+public function showByOwnerId(int $ownerId): JsonResponse
+{
+    $bookings = ServiceBooking::with([
+        'user',
+        'service.category',
+        'service.type',
+        'payment',
+    ])
+        ->whereHas('service', function ($query) use ($ownerId) {
+            $query->where('owner_id', $ownerId);
+        })
+        ->where('booking_status', 'pending')
+        ->where('customer_status', 'pending')
+        ->latest()
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Owner pending service bookings retrieved successfully',
+        'data' => ServiceBookingResource::collection($bookings),
+    ]);
+}
+public function showHistoryByOwnerId(int $ownerId): JsonResponse
+{
+    $bookings = ServiceBooking::with([
+        'user',
+        'service.category',
+        'service.type',
+        'payment',
+    ])
+        ->whereHas('service', function ($query) use ($ownerId) {
+            $query->where('owner_id', $ownerId);
+        })
+        ->where(function ($query) {
+            $query
+                ->where('booking_status', 'completed')
+                ->orWhere('customer_status', 'completed');
+        })
+        ->latest()
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Owner completed service booking history retrieved successfully',
+        'data' => ServiceBookingResource::collection($bookings),
+    ]);
+}
 }

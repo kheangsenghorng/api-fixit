@@ -67,6 +67,23 @@ class Service extends Model
     {
         return $this->belongsTo(Type::class);
     }
+    
+    public function bookings()
+    {
+        return $this->hasMany(ServiceBooking::class);
+    }
+    
+    public function payments()
+    {
+        return $this->hasManyThrough(
+            Payment::class,
+            ServiceBooking::class,
+            'service_id',
+            'service_booking_id',
+            'id',
+            'id'
+        );
+    }
 
     // public function reviews()
     // {

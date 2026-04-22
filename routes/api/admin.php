@@ -157,7 +157,7 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':admin'
     });
 
     //
-    Route::apiResource('service-bookings', ServiceBookingController::class);
+
 
     Route::apiResource('service-booking-providers', ServiceBookingProviderController::class);
 
