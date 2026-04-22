@@ -18,14 +18,14 @@ Route::get('/pay/cancel', [PayWayController::class,'cancel']);
 
 Route::post('/pay/callback', [PayWayController::class,'callback']);
 
-use Illuminate\Support\Facades\Mail;
+// use Illuminate\Support\Facades\Mail;
 
-Route::get('/test-email', function () {
+// Route::get('/test-email', function () {
 
-    Mail::raw('This is a test email from Laravel Fixit API.', function ($message) {
-        $message->to('senghorng0099p@gmail.com')
-                ->subject('Laravel Test Email');
-    });
+//     Mail::raw('This is a test email from Laravel Fixit API.', function ($message) {
+//         $message->to('senghorng0099p@gmail.com')
+//                 ->subject('Laravel Test Email');
+//     });
 
-    return "Email sent!";
-});
+//     return "Email sent!";
+// });

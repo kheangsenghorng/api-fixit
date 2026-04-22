@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Auth\OtpController;
 
 use App\Http\Controllers\Api\GeocodeController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Auth\OtpEmailController;
 use Illuminate\Support\Facades\Route;
@@ -61,3 +62,6 @@ Route::get('/owner-documents/{ownerDocument}/download',
     ->middleware('signed')
     ->whereNumber('ownerDocument')
     ->name('admin.owner-documents.download');
+
+
+

@@ -48,6 +48,12 @@ class ServiceBooking extends Model
     {
         return $this->hasMany(ServiceBookingProvider::class, 'service_booking_id');
     }
+    public function payment()
+    {
+        return $this->hasMany(Payment::class);
+    }
+    
+  
 
     // public function jobImages()
     // {

@@ -46,7 +46,23 @@ return [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         'chat_id' => env('TELEGRAM_CHAT_ID'),
    ],
-   
+   'bakong_gateway' => [
+        'url' => env('GATEWAY_BAKONG_API_URL', 'https://gateway.servicemeite.io'),
+        'api_key' => env('GATEWAY_BAKONG_API_KEY'),
+        'token' => env('BAKONG_TOKEN'),
+   ],
+   'bakong' => [
+    'admin_account_id' => env('BAKONG_ADMIN_ACCOUNT_ID'),
+    'merchant_name' => env('BAKONG_MERCHANT_NAME'),
+    ],
+
+    'deeplink' => [
+        'app_name' => env('DEEP_LINK_APP_NAME', 'Fixit'),
+        'icon_url' => env('DEEP_LINK_ICON_URL'),
+        'callback_url' => env('DEEP_LINK_CALLBACK_URL'),
+        'web_callback_url' => env('DEEP_LINK_WEB_CALLBACK_URL'),
+    ],
+    
 
 
 

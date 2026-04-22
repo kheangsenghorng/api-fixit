@@ -40,7 +40,7 @@ class ServiceBookingResource extends JsonResource
             'service' => $this->whenLoaded('service', function () {
                 return [
                     'id' => $this->service->id,
-                    'name' => $this->service->name,
+                    'name' => $this->service->title,
                     'category_id' => $this->service->category_id,
                     'type_id' => $this->service->type_id,
 
@@ -52,6 +52,23 @@ class ServiceBookingResource extends JsonResource
                         ? $this->service->type
                         : null,
                 ];
+            }),
+            'payment' => $this->whenLoaded('payment', function () {
+                return $this->payment->map(function ($payment) {
+                    return [
+                        'id' => $payment->id,
+                        'user_id' => $payment->user_id,
+                        'owner_id' => $payment->owner_id,
+                        'service_booking_id' => $payment->service_booking_id,
+                        'coupons_id' => $payment->coupons_id,
+                        'transaction_id' => $payment->transaction_id,
+                        'original_amount' => $payment->original_amount,
+                        'discount_amount' => $payment->discount_amount,
+                        'final_amount' => $payment->final_amount,
+                        'method' => $payment->method,
+                        'status' => $payment->status,
+                    ];
+                });
             }),
         ];
     }

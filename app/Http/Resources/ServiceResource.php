@@ -31,6 +31,7 @@ class ServiceResource extends JsonResource
                     'url' => asset('storage/'.$img),
                     'path' => $img
                 ]),
+   
 
             'created_at' => $this->created_at,
         ];

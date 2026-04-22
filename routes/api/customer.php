@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\IsActive;
@@ -21,5 +22,6 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':custom
        Route::post('/',[ServiceBookingController::class,'store']);
      });
 
+     Route::apiResource('payments', PaymentController::class);
      
 });

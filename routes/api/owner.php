@@ -138,4 +138,18 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
             ->whereNumber('coupon');
     });
 
+    Route::prefix('service-bookings')->group(function () {
+     
+        Route::get('/{service_booking}', [ServiceBookingController::class, 'show'])
+            ->whereNumber('service_booking');
+        Route::get('/owner/{ownerId}', [ServiceBookingController::class, 'showByOwnerId']);    
+        Route::get('/owner/{ownerId}/history', [ServiceBookingController::class, 'showHistoryByOwnerId']);
+        Route::put('/{service_booking}', [ServiceBookingController::class, 'update'])
+            ->whereNumber('service_booking');
+    
+        Route::patch('/{service_booking}', [ServiceBookingController::class, 'update'])
+            ->whereNumber('service_booking');
+    });
+
+
 });

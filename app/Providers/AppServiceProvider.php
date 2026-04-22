@@ -4,11 +4,15 @@ namespace App\Providers;
 
 use App\Models\Category;
 use App\Models\CouponUsage;
+use App\Models\Payment;
 use App\Models\Service;
+use App\Models\ServiceBooking;
 use App\Models\ServiceBookingProvider;
 use App\Models\Type;
 use App\Observers\CategoryObserver;
 use App\Observers\CouponUsageObserver;
+use App\Observers\PaymentObserver;
+use App\Observers\ServiceBookingObserver;
 use App\Observers\ServiceBookingProviderObserver;
 use App\Observers\ServiceObserver;
 use App\Observers\TypeObserver;
@@ -35,5 +39,7 @@ class AppServiceProvider extends ServiceProvider
 
         ServiceBookingProvider::observe(ServiceBookingProviderObserver::class);
         CouponUsage::observe(CouponUsageObserver::class);
+        ServiceBooking::observe(ServiceBookingObserver::class);
+        Payment::observe(PaymentObserver::class);
     }
 }
