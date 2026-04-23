@@ -47,3 +47,8 @@ Broadcast::channel('service-booking.{bookingId}', function ($user, $bookingId) {
         ->exists();
 });
 
+Broadcast::channel('owner.{ownerId}', function ($user, $ownerId) {
+    $owner = \App\Models\Owner::where('user_id', $user->id)->first();
+
+    return $owner && (int) $owner->id === (int) $ownerId;
+});

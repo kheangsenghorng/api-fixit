@@ -97,6 +97,43 @@ class ServiceController extends Controller
             ]
         ]);
     }
+    public function searchActiveServices(Request $request)
+    {
+        $query = Service::with(['category', 'type', 'owner'])
+            ->where('status', 'active')
+            ->whereHas('category', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->whereHas('type', function ($q) {
+                $q->where('status', 'active');
+            });
+    
+        if ($request->filled('search')) {
+            $keywords = explode(' ', $request->search);
+    
+            $query->where(function ($q) use ($keywords) {
+                foreach ($keywords as $keyword) {
+                    $q->where(function ($subQ) use ($keyword) {
+                        $subQ->where('title', 'like', '%' . $keyword . '%') // or name
+                             ->orWhereHas('category', function ($categoryQuery) use ($keyword) {
+                                 $categoryQuery->where('name', 'like', '%' . $keyword . '%');
+                             })
+                             ->orWhereHas('type', function ($typeQuery) use ($keyword) {
+                                 $typeQuery->where('name', 'like', '%' . $keyword . '%');
+                             });
+                    });
+                }
+            });
+        }
+    
+        $services = $query->latest()->paginate(10);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Search active services',
+            'data' => ServiceResource::collection($services),
+        ]);
+    }
 
     public function myServices(Request $request)
     {
@@ -162,7 +199,7 @@ class ServiceController extends Controller
             ]
         ]);
     }
-
+    
     public function serviceStats()
     {
         $owner = Owner::where('user_id', auth()->id())->firstOrFail();

@@ -62,7 +62,8 @@ Route::middleware(['auth:api'])->group(function () {
         Route::delete('/{service_booking}', [ServiceBookingController::class, 'destroy'])
             ->whereNumber('service_booking');
     });
-
+    
+    Route::apiResource('payments', PaymentController::class);
 
     Route::prefix('payments')->group(function () {
         Route::post('/khqr/individual', [PaymentController::class, 'generateIndividualKhqr']);

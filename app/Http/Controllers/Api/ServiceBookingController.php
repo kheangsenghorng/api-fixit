@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\OwnerNotificationEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreServiceBookingRequest;
 use App\Http\Requests\UpdateServiceBookingRequest;
 use App\Http\Resources\ServiceBookingResource;
+use App\Models\Service;
 use App\Models\ServiceBooking;
 use Illuminate\Http\JsonResponse;
 
@@ -27,6 +29,8 @@ class ServiceBookingController extends Controller
 
     public function store(StoreServiceBookingRequest $request): JsonResponse
     {
+        // $service = Service::findOrFail($request->service_id);
+
         $booking = ServiceBooking::create([
             'user_id' => $request->user_id,
             'service_id' => $request->service_id,
@@ -47,6 +51,15 @@ class ServiceBookingController extends Controller
         ]);
 
         $booking->load(['user', 'service.category', 'service.type']);
+
+        // broadcast(new OwnerNotificationEvent(
+        //     ownerId: $service->owner_id,
+        //     type: 'service-booking.created',
+        //     data: [
+        //         'booking' => $booking,
+        //         'message' => 'New service booking created',
+        //     ]
+        // ))->toOthers();
 
         return response()->json([
             'success' => true,
@@ -72,6 +85,7 @@ class ServiceBookingController extends Controller
             'user',
             'service.category',
             'service.type',
+            'payment',
         ])
             ->where('user_id', $userId)
             ->latest()
