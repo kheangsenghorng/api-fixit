@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\OwnerNotificationEvent;
 use App\Http\Controllers\Api\AdminOwnerDocumentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
@@ -53,6 +54,7 @@ Route::prefix('type')->group(function () {
 Route::prefix('service')->group(function () {
     Route::get('/', [ServiceController::class, 'index']);
     Route::get('/active', [ServiceController::class, 'activeServices']);
+    Route::get('/search-active-services', [ServiceController::class, 'searchActiveServices']);
     Route::get('/{sevive}/serviceId',[ServiceController::class,"show"]);
 });
 
@@ -62,6 +64,3 @@ Route::get('/owner-documents/{ownerDocument}/download',
     ->middleware('signed')
     ->whereNumber('ownerDocument')
     ->name('admin.owner-documents.download');
-
-
-
