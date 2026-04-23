@@ -65,16 +65,17 @@ Route::middleware(['auth:api'])->group(function () {
     
     Route::apiResource('payments', PaymentController::class);
 
-    Route::prefix('payments')->group(function () {
-        Route::post('/khqr/individual', [PaymentController::class, 'generateIndividualKhqr']);
-        Route::post('/khqr/merchant', [PaymentController::class, 'generateMerchantKhqr']);
-        Route::post('/khqr/image', [PaymentController::class, 'generateKhqrImage']);
-        Route::post('/khqr/deeplink', [PaymentController::class, 'generateDeeplink']);
-        Route::post('/khqr/check-md5', [PaymentController::class, 'checkTransactionByMd5']);
-        Route::post('/khqr/check-hash', [PaymentController::class, 'checkTransactionByHash']);
-        Route::post('/khqr/check-account', [PaymentController::class, 'checkBakongAccount']);
-        Route::post('/khqr/check-external-ref', [PaymentController::class, 'checkTransactionByExternalRef']);
-        Route::post('/download-qr', [PaymentController::class, 'downloadPaymentQr']);
-    });  
-    Route::post('/generate-payment', [PaymentController::class, 'generatePayment']);
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::post('/khqr/individual', [PaymentController::class, 'generateIndividualKhqr'])->name('khqr.individual');
+        Route::post('/khqr/merchant', [PaymentController::class, 'generateMerchantKhqr'])->name('khqr.merchant');
+        Route::post('/khqr/image', [PaymentController::class, 'generateKhqrImage'])->name('khqr.image');
+        Route::post('/khqr/deeplink', [PaymentController::class, 'generateDeeplink'])->name('khqr.deeplink');
+        Route::post('/khqr/check-md5', [PaymentController::class, 'checkTransactionByMd5'])->name('khqr.check-md5');
+        Route::post('/khqr/check-hash', [PaymentController::class, 'checkTransactionByHash'])->name('khqr.check-hash');
+        Route::post('/khqr/check-account', [PaymentController::class, 'checkBakongAccount'])->name('khqr.check-account');
+        Route::post('/khqr/check-external-ref', [PaymentController::class, 'checkTransactionByExternalRef'])->name('khqr.check-external-ref');
+        Route::post('/download-qr', [PaymentController::class, 'downloadPaymentQr'])->name('download-qr');
+    });
+    
+    Route::post('/generate-payment', [PaymentController::class, 'generatePayment'])->name('generate-payment');
  });

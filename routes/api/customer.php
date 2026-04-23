@@ -9,19 +9,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':customer'])
     ->prefix('customer')
+    ->name('customer.')
     ->group(function () {
 
-    Route::get('/profile/{user}', [UserController::class, 'show']);
-    Route::put('/profile/{user}', [UserController::class, 'update']);
-    Route::post('/avatar/{user}', [UserController::class, 'updateAvatar']);
+        Route::get('/profile/{user}', [UserController::class, 'show'])->name('profile.show');
+        Route::put('/profile/{user}', [UserController::class, 'update'])->name('profile.update');
+        Route::post('/avatar/{user}', [UserController::class, 'updateAvatar'])->name('avatar.update');
 
+        Route::prefix('service-bookings')
+            ->name('service-bookings.')
+            ->group(function () {
+                Route::get('/user/{userId}', [ServiceBookingController::class, 'showByUserId'])->name('showByUserId');
+                Route::post('/', [ServiceBookingController::class, 'store'])->name('store');
+            });
 
-    //service-booking
-     Route::prefix('/service-bookings')->group(function() {
-       Route::get('/user/{userId}',[ServiceBookingController::class, 'showByUserId']);
-       Route::post('/',[ServiceBookingController::class,'store']);
-     });
-
-     Route::apiResource('payments', PaymentController::class);
-     
-});
+        Route::apiResource('payments', PaymentController::class);
+    });
