@@ -74,6 +74,7 @@ class ServiceBookingController extends Controller
             'user',
             'service.category',
             'service.type',
+            'payment',
         ]);
 
         return new ServiceBookingResource($serviceBooking);
@@ -134,15 +135,23 @@ public function showByOwnerId(int $ownerId): JsonResponse
         ->whereHas('service', function ($query) use ($ownerId) {
             $query->where('owner_id', $ownerId);
         })
-        ->where('booking_status', 'pending')
+        ->whereNotIn('booking_status', ['completed', 'cancelled'])
         ->where('customer_status', 'pending')
         ->latest()
-        ->get();
+        ->paginate(10);
 
     return response()->json([
         'success' => true,
         'message' => 'Owner pending service bookings retrieved successfully',
         'data' => ServiceBookingResource::collection($bookings),
+        'pagination' => [
+            'current_page' => $bookings->currentPage(),
+            'last_page' => $bookings->lastPage(),
+            'per_page' => $bookings->perPage(),
+            'total' => $bookings->total(),
+            'from' => $bookings->firstItem(),
+            'to' => $bookings->lastItem(),
+        ],
     ]);
 }
 public function showHistoryByOwnerId(int $ownerId): JsonResponse

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\CouponUsageController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
+use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
@@ -150,6 +151,26 @@ Route::middleware(['auth:api', IsActive::class, RoleMiddleware::class . ':owner'
         Route::patch('/{service_booking}', [ServiceBookingController::class, 'update'])
             ->whereNumber('service_booking');
     });
+   
 
+    Route::prefix('payment-accounts')->group(function () {
+        Route::get('/', [PaymentAccountController::class, 'index']);
+        Route::post('/', [PaymentAccountController::class, 'store']);
+    
+        Route::get('/{id}', [PaymentAccountController::class, 'show'])
+            ->whereNumber('id');
+        Route::get('/user/{userId}', [PaymentAccountController::class, 'showByUser']);
+
+        Route::get('/check-company/{userId}', [PaymentAccountController::class, 'checkCompanyBankAccount'])
+            ->whereNumber('userId');
+        Route::put('/{id}', [PaymentAccountController::class, 'update'])
+            ->whereNumber('id');
+    
+        Route::patch('/{id}', [PaymentAccountController::class, 'update'])
+            ->whereNumber('id');
+    
+        Route::delete('/{id}', [PaymentAccountController::class, 'destroy'])
+            ->whereNumber('id');    
+    });
 
 });
