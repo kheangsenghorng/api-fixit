@@ -156,10 +156,37 @@ class PaymentController extends Controller
         $request->validate([
             'bakong_account_id' => ['required', 'string'],
         ]);
-
-        $result = $this->bakongService->checkBakongAccount($request->bakong_account_id);
-
-        return response()->json($result, $result['success'] ? 200 : 400);
+    
+        $result = $this->bakongService->checkBakongAccount(
+            $request->bakong_account_id
+        );
+    
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message'] ?? 'Bakong account check failed',
+                'data' => $result['data'] ?? null,
+            ], 400);
+        }
+    
+        $bakong = $result['data'] ?? [];
+    
+        // Bakong real account info is inside data.data
+        $account = $bakong['data'] ?? [];
+    
+        return response()->json([
+            'message' => $bakong['responseMessage'] ?? 'Bakong account checked successfully',
+            'data' => [
+                'accountStatus' => $account['accountStatus'] ?? null,
+                'canReceive' => $account['canReceive'] ?? false,
+                'frozen' => $account['frozen'] ?? null,
+                'fullName' => $account['fullName'] ?? null,
+                'kycStatus' => $account['kycStatus'] ?? null,
+    
+                'responseCode' => $bakong['responseCode'] ?? null,
+                'responseMessage' => $bakong['responseMessage'] ?? null,
+                'errorCode' => $bakong['errorCode'] ?? null,
+            ],
+        ]);
     }
 
     public function checkTransactionByExternalRef(Request $request)
