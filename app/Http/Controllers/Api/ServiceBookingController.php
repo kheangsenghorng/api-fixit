@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreServiceBookingRequest;
 use App\Http\Requests\UpdateServiceBookingRequest;
 use App\Http\Resources\ServiceBookingResource;
+use App\Models\Payment;
 use App\Models\Service;
 use App\Models\ServiceBooking;
 use Illuminate\Http\JsonResponse;
@@ -122,7 +123,7 @@ class ServiceBookingController extends Controller
     }
 
 
-    // fined by owner id
+   
 // find by owner id
 public function showByOwnerId(int $ownerId): JsonResponse
 {
@@ -177,6 +178,86 @@ public function showHistoryByOwnerId(int $ownerId): JsonResponse
         'success' => true,
         'message' => 'Owner completed service booking history retrieved successfully',
         'data' => ServiceBookingResource::collection($bookings),
+    ]);
+}
+
+// booking stats by owner id    
+public function bookingStatsByOwnerId(int $ownerId): JsonResponse
+{
+    $baseQuery = ServiceBooking::whereHas('service', function ($query) use ($ownerId) {
+        $query->where('owner_id', $ownerId);
+    });
+
+    $monthlyRevenue = Payment::whereHas('serviceBooking.service', function ($query) use ($ownerId) {
+            $query->where('owner_id', $ownerId);
+        })
+        ->where('status', 'paid')
+        ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, SUM(final_amount) as revenue')
+        ->groupByRaw('YEAR(created_at), MONTH(created_at)')
+        ->orderByRaw('YEAR(created_at), MONTH(created_at)')
+        ->get()
+        ->map(function ($item) {
+            return [
+                'year' => (int) $item->year,
+                'month' => (int) $item->month,
+                'revenue' => (float) $item->revenue,
+            ];
+        });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Owner booking stats retrieved successfully',
+        'data' => [
+            'total_bookings' => (clone $baseQuery)->count(),
+
+            'pending_customer_bookings' => (clone $baseQuery)
+                ->whereNotIn('booking_status', ['completed', 'cancelled'])
+                ->where('customer_status', 'pending')
+                ->count(),
+
+            'completed_bookings' => (clone $baseQuery)
+                ->where('booking_status', 'completed')
+                ->count(),
+
+            'cancelled_bookings' => (clone $baseQuery)
+                ->where('booking_status', 'cancelled')
+                ->count(),
+
+            'paid_bookings' => (clone $baseQuery)
+                ->whereHas('payment', function ($query) {
+                    $query->where('status', 'paid');
+                })
+                ->count(),
+
+            'pending_payments' => (clone $baseQuery)
+                ->whereHas('payment', function ($query) {
+                    $query->where('status', 'pending');
+                })
+                ->count(),
+
+            'failed_payments' => (clone $baseQuery)
+                ->whereHas('payment', function ($query) {
+                    $query->where('status', 'failed');
+                })
+                ->count(),
+
+            'unpaid_bookings' => (clone $baseQuery)
+                ->where(function ($query) {
+                    $query->whereDoesntHave('payment')
+                        ->orWhereHas('payment', function ($paymentQuery) {
+                            $paymentQuery->where('status', '!=', 'paid');
+                        });
+                })
+                ->count(),
+
+            'total_paid_amount' => Payment::whereHas('serviceBooking.service', function ($query) use ($ownerId) {
+                    $query->where('owner_id', $ownerId);
+                })
+                ->where('status', 'paid')
+                ->sum('final_amount'),
+
+            'monthly_revenue' => $monthlyRevenue,
+        ],
     ]);
 }
 }
