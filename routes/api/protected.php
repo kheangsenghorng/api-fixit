@@ -5,10 +5,12 @@ use App\Http\Controllers\Api\CouponUsageController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
+    
     Route::prefix('owner')->group(function () {
         Route::post('/', [OwnerController::class, 'store']);
 
@@ -36,9 +38,8 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/', [CouponController::class, 'index']);
         Route::get('/stats', [CouponController::class, 'stats']);
         Route::get('/{coupon}', [CouponController::class, 'show']);
-        Route::get('/show-apply/{coupon}',[CouponController::class,'showApply']);
+        Route::get('/show-apply/{coupon}', [CouponController::class, 'showApply']);
         Route::post('/', [CouponController::class, 'store']);
-        
 
         Route::put('/{coupon}', [CouponController::class, 'update'])
             ->whereNumber('coupon');
@@ -49,23 +50,23 @@ Route::middleware(['auth:api'])->group(function () {
     Route::prefix('service-bookings')->group(function () {
         Route::get('/', [ServiceBookingController::class, 'index']);
         Route::post('/', [ServiceBookingController::class, 'store']);
-    
+
         Route::get('/{service_booking}', [ServiceBookingController::class, 'show'])
             ->whereNumber('service_booking');
-    
+
         Route::put('/{service_booking}', [ServiceBookingController::class, 'update'])
             ->whereNumber('service_booking');
-    
+
         Route::patch('/{service_booking}', [ServiceBookingController::class, 'update'])
             ->whereNumber('service_booking');
-    
+
         Route::delete('/{service_booking}', [ServiceBookingController::class, 'destroy'])
             ->whereNumber('service_booking');
     });
-    
+
     Route::apiResource('payments', PaymentController::class);
 
-    Route::prefix('payments')->name('payments.')->group(function () {
+    Route::middleware(['throttle:10,1'])->prefix('payments')->name('payments.')->group(function () {
         Route::post('/khqr/individual', [PaymentController::class, 'generateIndividualKhqr'])->name('khqr.individual');
         Route::post('/khqr/merchant', [PaymentController::class, 'generateMerchantKhqr'])->name('khqr.merchant');
         Route::post('/khqr/image', [PaymentController::class, 'generateKhqrImage'])->name('khqr.image');
@@ -76,6 +77,19 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/khqr/check-external-ref', [PaymentController::class, 'checkTransactionByExternalRef'])->name('khqr.check-external-ref');
         Route::post('/download-qr', [PaymentController::class, 'downloadPaymentQr'])->name('download-qr');
     });
-    
-    Route::post('/generate-payment', [PaymentController::class, 'generatePayment'])->name('generate-payment');
- });
+
+    Route::post('/generate-payment', [PaymentController::class, 'generatePayment'])
+        ->name('generate-payment');
+
+    Route::prefix('providers')->group(function () {
+        Route::get('/', [ProviderController::class, 'index']);
+        Route::post('/', [ProviderController::class, 'store']);
+        Route::get('/{id}', [ProviderController::class, 'show']);
+          // Find providers by owner
+        Route::get('/owner/{ownerId}', [ProviderController::class, 'findByOwner']);
+
+        Route::put('/{id}', [ProviderController::class, 'update']);
+        Route::patch('/{id}', [ProviderController::class, 'update']);
+        Route::delete('/{id}', [ProviderController::class, 'destroy']);
+    });
+});

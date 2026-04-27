@@ -80,6 +80,10 @@ class Owner extends Model
     {
         return $this->hasMany(OwnerDocument::class);
     }
+    public function providers()
+    {
+        return $this->hasMany(Provider::class);
+    }
     
     public function getFinalStatusAttribute(): string
     {

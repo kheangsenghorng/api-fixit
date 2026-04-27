@@ -17,8 +17,16 @@ class UpdateProviderRequest extends FormRequest
             'user_id' => ['sometimes', 'exists:users,id'],
             'owner_id' => ['sometimes', 'exists:owners,id'],
             'category_id' => ['sometimes', 'exists:categories,id'],
+
             'provider_type' => ['sometimes', 'in:staff,freelancer'],
-            'status' => ['sometimes', 'string', 'in:active,inactive'],
+
+            // Provider account status
+            'status' => ['sometimes', 'string', 'in:active,inactive,suspended'],
+
+            // Provider table fields
+            'rating' => ['sometimes', 'numeric', 'min:0', 'max:5'],
+            'total_jobs' => ['sometimes', 'integer', 'min:0'],
+            'comment' => ['sometimes', 'nullable', 'string'],
         ];
     }
 }

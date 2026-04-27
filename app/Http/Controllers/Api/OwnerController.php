@@ -173,11 +173,11 @@ class OwnerController extends BaseController
      }
 
    /**
- * Display owner by user id
- */
+     * Display owner by user id
+     */
     public function show($userId)
     {
-        $owner = Owner::with('user')
+        $owner = Owner::with(['user', 'providers.user', 'providers.category'])
             ->where('user_id', $userId)
             ->firstOrFail();
 

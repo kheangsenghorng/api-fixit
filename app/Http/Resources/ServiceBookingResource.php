@@ -7,6 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ServiceBookingResource extends JsonResource
 {
+    private function storageUrl(?string $path): ?string
+    {
+        return $path ? asset('storage/' . $path) : null;
+    }
+
     public function toArray(Request $request): array
     {
         return [
@@ -41,18 +46,36 @@ class ServiceBookingResource extends JsonResource
                 return [
                     'id' => $this->service->id,
                     'name' => $this->service->title,
+
+                    'images' => collect($this->service->images ?? [])
+                        ->map(fn ($img) => [
+                            'url' => $this->storageUrl($img),
+                        ])
+                        ->values(),
+
                     'category_id' => $this->service->category_id,
                     'type_id' => $this->service->type_id,
 
-                    'category' => $this->service->relationLoaded('category')
-                        ? $this->service->category
+                    'category' => $this->service->relationLoaded('category') && $this->service->category
+                        ? [
+                            'id' => $this->service->category->id,
+                            'name' => $this->service->category->name,
+                            'icon' => $this->service->category->icon,
+                            'icon_url' => $this->storageUrl($this->service->category->icon),
+                        ]
                         : null,
 
-                    'type' => $this->service->relationLoaded('type')
-                        ? $this->service->type
+                    'type' => $this->service->relationLoaded('type') && $this->service->type
+                        ? [
+                            'id' => $this->service->type->id,
+                            'name' => $this->service->type->name,
+                            'icon' => $this->service->type->icon,
+                            'icon_url' => $this->storageUrl($this->service->type->icon),
+                        ]
                         : null,
                 ];
             }),
+
             'payment' => $this->whenLoaded('payment', function () {
                 return $this->payment->map(function ($payment) {
                     return [
@@ -68,7 +91,7 @@ class ServiceBookingResource extends JsonResource
                         'method' => $payment->method,
                         'status' => $payment->status,
                     ];
-                });
+                })->values();
             }),
         ];
     }

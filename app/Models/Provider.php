@@ -17,6 +17,9 @@ class Provider extends Model
         'category_id',
         'provider_type',
         'status',
+        'rating',
+        'total_jobs',
+        'comment',
     ];
 
     public function user()

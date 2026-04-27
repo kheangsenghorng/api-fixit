@@ -10,7 +10,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, Notifiable,HasUpdatedAfter;
+    use HasFactory, Notifiable, HasUpdatedAfter;
 
     protected $fillable = [
         'name',
@@ -20,6 +20,7 @@ class User extends Authenticatable implements JWTSubject
         'role',
         'avatar',
         'is_active',
+        'owner_id',
     ];
 
     protected $hidden = [
@@ -58,6 +59,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->role === 'admin';
     }
+
     public function isOwner()
     {
         return $this->role === 'owner';
@@ -72,9 +74,24 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->role === 'customer';
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    // For user with role owner:
+    // users.id -> owners.user_id
+    public function ownerProfile()
+    {
+        return $this->hasOne(Owner::class, 'user_id');
+    }
+
+    // For users created under an owner:
+    // users.owner_id -> owners.id
     public function owner()
-{
-    return $this->hasOne(Owner::class);
-}
-    
+    {
+        return $this->belongsTo(Owner::class, 'owner_id');
+    }
 }
