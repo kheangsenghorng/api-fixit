@@ -39,4 +39,8 @@ class Payment extends Model
     {
         return $this->belongsTo(Coupon::class, 'coupons_id');
     }
+    public function paymentSplit()
+{
+    return $this->hasOne(PaymentSplit::class);
+}
 }

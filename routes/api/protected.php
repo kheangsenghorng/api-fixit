@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\ServiceBookingController;
+use App\Http\Controllers\Api\ServiceBookingProviderController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
@@ -66,7 +67,7 @@ Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
 
     Route::apiResource('payments', PaymentController::class);
 
-    Route::middleware(['throttle:10,1'])->prefix('payments')->name('payments.')->group(function () {
+    Route::middleware(['throttle:120,1'])->prefix('payments')->name('payments.')->group(function () {
         Route::post('/khqr/individual', [PaymentController::class, 'generateIndividualKhqr'])->name('khqr.individual');
         Route::post('/khqr/merchant', [PaymentController::class, 'generateMerchantKhqr'])->name('khqr.merchant');
         Route::post('/khqr/image', [PaymentController::class, 'generateKhqrImage'])->name('khqr.image');
@@ -87,9 +88,30 @@ Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
         Route::get('/{id}', [ProviderController::class, 'show']);
           // Find providers by owner
         Route::get('/owner/{ownerId}', [ProviderController::class, 'findByOwner']);
+         // Find providers by owner check provider
+        Route::get('/check-provider/owner/{ownerId}/check', [ProviderController::class, 'findByOwnerCheckProvider']);
 
         Route::put('/{id}', [ProviderController::class, 'update']);
         Route::patch('/{id}', [ProviderController::class, 'update']);
         Route::delete('/{id}', [ProviderController::class, 'destroy']);
+    });
+
+    Route::middleware(['auth:api', 'role:admin,owner,provider'])
+    ->prefix('service-booking-providers')
+    ->name('service-booking-providers.')
+    ->group(function () {
+        Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
+        Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
+
+        Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
+            ->name('by-booking');
+
+        Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
+            ->name('by-provider');
+
+        Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
+        Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
+        Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
+        Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
     });
 });

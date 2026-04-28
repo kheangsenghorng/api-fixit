@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ServiceBookingController;
+use App\Http\Controllers\Api\ServiceBookingProviderController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Api\UserController;
@@ -239,7 +240,7 @@ Route::middleware([
                 ->whereNumber('userId');
 
             Route::get('/check-company/{userId}', [PaymentAccountController::class, 'checkCompanyBankAccount'])
-                ->middleware('throttle:20,1')
+                ->middleware('throttle:190,1')
                 ->whereNumber('userId');
 
             Route::get('/{id}', [PaymentAccountController::class, 'show'])
@@ -253,4 +254,29 @@ Route::middleware([
                 ->middleware('throttle:5,1')
                 ->whereNumber('id');
         });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payment Accounts
+        |--------------------------------------------------------------------------
+        */
+
+    Route::prefix('service-booking-providers')
+        ->name('service-booking-providers.')
+        ->group(function () {
+            Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
+            Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
+
+            Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
+                ->name('by-booking');
+
+            Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
+                ->name('by-provider');
+
+            Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
+            Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
+            Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
+            Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
     });
+ });

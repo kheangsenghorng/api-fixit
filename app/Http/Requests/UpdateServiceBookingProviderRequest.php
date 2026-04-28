@@ -15,7 +15,7 @@ class UpdateServiceBookingProviderRequest extends FormRequest
     {
         return [
             'service_booking_id' => ['sometimes', 'exists:service_bookings,id'],
-            'provider_id' => ['sometimes', 'exists:providers,id'],
+            'provider_id' => ['sometimes', 'exists:providers,providerId'],
             'assigned_by' => ['sometimes', 'nullable', 'exists:owners,id'],
             'role' => ['sometimes', 'in:main,helper'],
             'status' => ['sometimes', 'in:assigned,accepted,on_the_way,arrived,working,completed,declined'],

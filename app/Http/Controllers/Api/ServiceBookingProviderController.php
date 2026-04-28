@@ -29,20 +29,31 @@ class ServiceBookingProviderController extends Controller
     public function store(StoreServiceBookingProviderRequest $request): JsonResponse
     {
         $data = $request->validated();
-
+    
+        $exists = ServiceBookingProvider::where('service_booking_id', $data['service_booking_id'])
+            ->where('provider_id', $data['provider_id'])
+            ->exists();
+    
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This provider is already assigned to this booking',
+            ], 409);
+        }
+    
         if (empty($data['assigned_at'])) {
             $data['assigned_at'] = now();
         }
-
+    
         $item = ServiceBookingProvider::create($data);
-
+    
         $item->load([
             'serviceBooking.user',
             'serviceBooking.service',
             'provider',
             'assignedByOwner',
         ]);
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Provider assigned to booking successfully',
@@ -67,34 +78,16 @@ class ServiceBookingProviderController extends Controller
         ServiceBookingProvider $serviceBookingProvider
     ): ServiceBookingProviderResource {
         $data = $request->validated();
-
-        if (($data['status'] ?? null) === 'completed' && empty($data['completed_at'])) {
-            $data['completed_at'] = now();
-        }
-
+    
         $serviceBookingProvider->update($data);
-
-        if (in_array($serviceBookingProvider->status, ['accepted', 'on_the_way', 'arrived', 'working'])) {
-            $serviceBookingProvider->serviceBooking?->update([
-                'booking_status' => 'in_progress',
-            ]);
-        }
-
-        if ($serviceBookingProvider->status === 'completed') {
-            $serviceBookingProvider->serviceBooking?->update([
-                'booking_status' => 'awaiting_customer_confirmation',
-                'customer_status' => 'pending',
-                'auto_complete_at' => now()->addHours(48),
-            ]);
-        }
-
+    
         $serviceBookingProvider->load([
             'serviceBooking.user',
             'serviceBooking.service',
             'provider',
             'assignedByOwner',
         ]);
-
+    
         return new ServiceBookingProviderResource($serviceBookingProvider);
     }
 
@@ -113,6 +106,7 @@ class ServiceBookingProviderController extends Controller
         $items = ServiceBookingProvider::with([
             'provider',
             'assignedByOwner',
+            'provider.user',
         ])
             ->where('service_booking_id', $bookingId)
             ->latest()
