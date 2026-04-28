@@ -96,22 +96,22 @@ Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
         Route::delete('/{id}', [ProviderController::class, 'destroy']);
     });
 
-    Route::middleware(['auth:api', 'role:admin,owner,provider'])
-    ->prefix('service-booking-providers')
-    ->name('service-booking-providers.')
-    ->group(function () {
-        Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
-        Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
+    // Route::middleware(['auth:api', 'role:admin,owner,provider'])
+    // ->prefix('service-booking-providers')
+    // ->name('service-booking-providers.')
+    // ->group(function () {
+    //     Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
+    //     Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
 
-        Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
-            ->name('by-booking');
+    //     Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
+    //         ->name('by-booking');
 
-        Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
-            ->name('by-provider');
+    //     Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
+    //         ->name('by-provider');
 
-        Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
-        Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
-        Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
-        Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
-    });
+    //     Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
+    //     Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
+    //     Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
+    //     Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
+    // });
 });

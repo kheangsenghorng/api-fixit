@@ -262,21 +262,21 @@ Route::middleware([
         |--------------------------------------------------------------------------
         */
 
-    Route::prefix('service-booking-providers')
-        ->name('service-booking-providers.')
+     Route::prefix('service-booking-providers')
+        ->name('owner.service-booking-providers.')
         ->group(function () {
             Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
             Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
-
+    
             Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
                 ->name('by-booking');
-
+    
             Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
                 ->name('by-provider');
-
+    
             Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
             Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
             Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
             Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
-    });
+        });
  });
