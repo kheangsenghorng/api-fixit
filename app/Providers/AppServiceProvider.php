@@ -41,5 +41,6 @@ class AppServiceProvider extends ServiceProvider
         CouponUsage::observe(CouponUsageObserver::class);
         ServiceBooking::observe(ServiceBookingObserver::class);
         Payment::observe(PaymentObserver::class);
+
     }
 }

@@ -15,7 +15,7 @@ class StoreServiceBookingProviderRequest extends FormRequest
     {
         return [
             'service_booking_id' => ['required', 'exists:service_bookings,id'],
-            'provider_id' => ['required', 'exists:providers,id'],
+            'provider_id' => ['required', 'exists:providers,providerId'],
             'assigned_by' => ['nullable', 'exists:owners,id'],
             'role' => ['nullable', 'in:main,helper'],
             'status' => ['nullable', 'in:assigned,accepted,on_the_way,arrived,working,completed,declined'],

@@ -37,7 +37,12 @@ class Provider extends Model
         return $this->belongsTo(Category::class);
     }
     public function bookingProviders()
+    {
+        return $this->hasMany(ServiceBookingProvider::class, 'provider_id');
+    }
+    public function latestBookingProvider()
 {
-    return $this->hasMany(ServiceBookingProvider::class, 'provider_id');
+    return $this->hasOne(ServiceBookingProvider::class, 'provider_id')
+        ->latestOfMany();
 }
 }

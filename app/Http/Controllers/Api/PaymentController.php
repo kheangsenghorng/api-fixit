@@ -8,6 +8,9 @@ use App\Services\BakongService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
+use App\Models\OwnerPayout;
+use App\Models\PaymentSplit;
+use Illuminate\Support\Facades\DB;
 use Imagick;
 use ImagickPixel;
 
@@ -40,26 +43,52 @@ class PaymentController extends Controller
 
     public function store(StorePaymentRequest $request)
     {
-        $payment = Payment::create([
-            'user_id' => $request->user_id,
-            'owner_id' => $request->owner_id,
-            'service_booking_id' => $request->service_booking_id,
-            'coupons_id' => $request->coupons_id,
-            'transaction_id' => $request->transaction_id,
-            'original_amount' => $request->original_amount,
-            'discount_amount' => $request->discount_amount ?? 0,
-            'final_amount' => $request->final_amount,
-            'method' => $request->input('method'),
-            'status' => $request->status ?? 'pending',
-        ]);
-
+        $payment = DB::transaction(function () use ($request) {
+            $payment = Payment::create([
+                'user_id' => $request->user_id,
+                'owner_id' => $request->owner_id,
+                'service_booking_id' => $request->service_booking_id,
+                'coupons_id' => $request->coupons_id,
+                'transaction_id' => $request->transaction_id,
+                'original_amount' => $request->original_amount,
+                'discount_amount' => $request->discount_amount ?? 0,
+                'final_amount' => $request->final_amount,
+                'method' => $request->input('method'),
+                'status' => $request->status ?? 'pending',
+            ]);
+    
+            if ($payment->status === 'paid') {
+                $serviceAmount = $payment->final_amount;
+    
+                $adminCommission = round($serviceAmount * 0.10, 2);
+                $ownerPayout = round($serviceAmount - $adminCommission, 2);
+    
+                $split = PaymentSplit::create([
+                    'payment_id' => $payment->id,
+                    'owner_id' => $payment->owner_id,
+                    'service_amount' => $serviceAmount,
+                    'admin_commission' => $adminCommission,
+                    'owner_payout' => $ownerPayout,
+                ]);
+    
+                OwnerPayout::create([
+                    'owner_id' => $payment->owner_id,
+                    'split_id' => $split->id,
+                    'amount' => $ownerPayout,
+                    'method' => 'bank_transfer',
+                    'status' => 'pending',
+                ]);
+            }
+    
+            return $payment;
+        });
+    
         return response()->json([
             'success' => true,
             'message' => 'Payment created successfully',
             'data' => $payment,
         ], 201);
     }
-
     public function show(Payment $payment)
     {
         $payment->load([

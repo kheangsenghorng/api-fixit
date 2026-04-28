@@ -31,6 +31,7 @@ class ProviderResource extends JsonResource
             'user' => $this->whenLoaded('user'),
             'owner' => $this->whenLoaded('owner'),
             'category' => $this->whenLoaded('category'),
+            'bookingProviders' => $this->whenLoaded('bookingProviders'),
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

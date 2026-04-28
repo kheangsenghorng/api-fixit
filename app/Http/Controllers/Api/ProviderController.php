@@ -56,8 +56,41 @@ class ProviderController extends Controller
 
     public function findByOwner($ownerId)
     {
-        $providers = Provider::with(['user', 'owner', 'category'])
+        $providers = Provider::with(['user', 'owner', 'category','bookingProviders'])
             ->where('owner_id', $ownerId)
+            ->get();
+    
+        return response()->json([
+            'message' => 'Providers fetched successfully',
+            'data' => ProviderResource::collection($providers),
+        ], 200);
+    }
+
+    public function findByOwnerCheckProvider($ownerId)
+    {
+        $busyStatuses = [
+            'assigned',
+            'accepted',
+            'on_the_way',
+            'arrived',
+            'working',
+        ];
+    
+        $providers = Provider::with([
+                'user',
+                'owner',
+                'category',
+                'bookingProviders',
+                'latestBookingProvider',
+            ])
+            ->where('owner_id', $ownerId)
+            ->where(function ($query) use ($busyStatuses) {
+                $query
+                    ->whereDoesntHave('latestBookingProvider')
+                    ->orWhereHas('latestBookingProvider', function ($q) use ($busyStatuses) {
+                        $q->whereNotIn('status', $busyStatuses);
+                    });
+            })
             ->get();
     
         return response()->json([
