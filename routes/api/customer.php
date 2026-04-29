@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
 use App\Http\Controllers\Api\UserController;
@@ -52,21 +53,37 @@ Route::middleware([
         Route::apiResource('payments', PaymentController::class)
             ->middleware('throttle:20,1');
 
-    Route::prefix('service-booking-providers')
-    ->name('service-booking-providers.')
-    ->group(function () {
-        Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
-        Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
+        Route::prefix('service-booking-providers')
+        ->name('service-booking-providers.')
+            ->group(function () {
+            Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
+            Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
 
-        Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
-            ->name('by-booking');
+            Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
+                ->name('by-booking');
 
-        Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
-            ->name('by-provider');
+            Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
+                ->name('by-provider');
 
-        Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
-        Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
-        Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
-        Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
-    });    
+            Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
+            Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
+            Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
+            Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
+      });  
+      Route::prefix('reviews')
+        ->name('reviews.')
+        ->group(function () {
+            Route::get('/', [ReviewController::class, 'index'])->name('index');
+            Route::post('/', [ReviewController::class, 'store'])->name('store');
+
+            Route::get('/booking/{bookingId}', [ReviewController::class, 'showByBookingId'])
+                ->name('by-booking');
+
+            Route::get('/user/{userId}', [ReviewController::class, 'showByUserId'])
+                ->name('by-user');
+
+            Route::get('/{review}', [ReviewController::class, 'show'])->name('show');
+            Route::put('/{review}', [ReviewController::class, 'update'])->name('update');
+            Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('destroy');
+        });  
     });
