@@ -94,4 +94,14 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo(Owner::class, 'owner_id');
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+     public function serviceBookings()
+    {
+        return $this->hasMany(ServiceBooking::class);
+    }
 }
