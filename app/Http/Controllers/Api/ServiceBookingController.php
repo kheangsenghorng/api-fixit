@@ -69,7 +69,7 @@ class ServiceBookingController extends Controller
         ], 201);
     }
 
-    public function show(ServiceBooking $serviceBooking): ServiceBookingResource
+    public function show(ServiceBooking $serviceBooking): JsonResponse
     {
         $serviceBooking->load([
             'user',
@@ -78,7 +78,11 @@ class ServiceBookingController extends Controller
             'payment',
         ]);
 
-        return new ServiceBookingResource($serviceBooking);
+        return response()->json([
+            'success' => true,
+            'message' => 'Service booking retrieved successfully',
+            'data' => new ServiceBookingResource($serviceBooking),
+        ]);
     }
 
     public function showByUserId(int $userId): JsonResponse

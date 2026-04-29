@@ -22,7 +22,7 @@ class ServiceBookingProviderResource extends JsonResource
             'updated_at' => $this->updated_at,
 
             'service_booking' => $this->whenLoaded('serviceBooking'),
-            'provider' => $this->whenLoaded('provider'),
+            'provider' => new ProviderResource($this->whenLoaded('provider')),
             'assigned_by_owner' => $this->whenLoaded('assignedByOwner'),
         ];
     }

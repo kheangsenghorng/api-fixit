@@ -28,7 +28,7 @@ class ProviderResource extends JsonResource
             'business_name' => $this->owner?->business_name,
             'specialty' => $this->category?->name,
 
-            'user' => $this->whenLoaded('user'),
+            'user' => new UserResource($this->whenLoaded('user')),
             'owner' => $this->whenLoaded('owner'),
             'category' => $this->whenLoaded('category'),
             'bookingProviders' => $this->whenLoaded('bookingProviders'),
