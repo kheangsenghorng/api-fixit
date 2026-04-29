@@ -84,7 +84,6 @@ Route::middleware([
 
             Route::get('/{review}', [ReviewController::class, 'show'])->name('show');
             Route::put('/{review}', [ReviewController::class, 'update'])->name('update');
-            Route::patch('/{review}', [ReviewController::class, 'update'])->name('patch');
             Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('destroy');
         });  
     });

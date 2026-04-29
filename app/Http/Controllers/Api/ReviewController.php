@@ -81,7 +81,7 @@ class ReviewController extends Controller
 
     public function showByBookingId($bookingId)
     {
-        $reviews = Review::where('booking_id', $bookingId)->get();
+        $reviews = Review::where('service_booking_id', $bookingId)->get();
 
         if ($reviews->isEmpty()) {
             return response()->json([
