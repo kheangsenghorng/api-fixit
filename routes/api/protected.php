@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth:api', 'throttle:300,1'])->group(function () {
     
     Route::prefix('owner')->group(function () {
         Route::post('/', [OwnerController::class, 'store']);
