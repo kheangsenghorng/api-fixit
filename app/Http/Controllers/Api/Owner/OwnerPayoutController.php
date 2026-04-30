@@ -2,65 +2,69 @@
 
 namespace App\Http\Controllers\Api\Owner;
 
-use App\Models\OwnerPayout;
 use App\Http\Controllers\Controller;
+use App\Models\OwnerPayout;
 use Illuminate\Http\Request;
+
 
 class OwnerPayoutController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $ownerId = auth()->id();
+
+        $query = OwnerPayout::with(['split.payment'])
+            ->where('owner_id', $ownerId);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $payouts = $query->latest()->paginate($request->get('per_page', 15));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your payouts fetched successfully',
+            'data' => $payouts,
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function stats()
     {
-        //
+        $ownerId = auth()->id();
+
+        $query = OwnerPayout::where('owner_id', $ownerId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your payout stats fetched successfully',
+            'data' => [
+                'total_payouts' => $query->count(),
+                'total_amount' => round((float) $query->sum('amount'), 2),
+
+                'pending_count' => (clone $query)->where('status', 'pending')->count(),
+                'paid_count' => (clone $query)->where('status', 'paid')->count(),
+                'failed_count' => (clone $query)->where('status', 'failed')->count(),
+
+                'pending_amount' => round((float) (clone $query)->where('status', 'pending')->sum('amount'), 2),
+                'paid_amount' => round((float) (clone $query)->where('status', 'paid')->sum('amount'), 2),
+                'failed_amount' => round((float) (clone $query)->where('status', 'failed')->sum('amount'), 2),
+            ],
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show($id)
     {
-        //
-    }
+        $ownerId = auth()->id();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(OwnerPayout $ownerPayout)
-    {
-        //
-    }
+        $payout = OwnerPayout::with(['split.payment'])
+            ->where('owner_id', $ownerId)
+            ->findOrFail($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(OwnerPayout $ownerPayout)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, OwnerPayout $ownerPayout)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(OwnerPayout $ownerPayout)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'message' => 'Your payout fetched successfully',
+            'data' => $payout,
+        ]);
     }
 }
