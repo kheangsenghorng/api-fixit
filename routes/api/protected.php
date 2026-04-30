@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:api', 'throttle:300,1'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
     
     Route::prefix('owner')->group(function () {
         Route::post('/', [OwnerController::class, 'store']);
@@ -67,7 +67,7 @@ Route::middleware(['auth:api', 'throttle:300,1'])->group(function () {
 
     Route::apiResource('payments', PaymentController::class);
 
-    Route::middleware(['throttle:120,1'])->prefix('payments')->name('payments.')->group(function () {
+    Route::prefix('payments')->name('payments.')->group(function () {
         Route::post('/khqr/individual', [PaymentController::class, 'generateIndividualKhqr'])->name('khqr.individual');
         Route::post('/khqr/merchant', [PaymentController::class, 'generateMerchantKhqr'])->name('khqr.merchant');
         Route::post('/khqr/image', [PaymentController::class, 'generateKhqrImage'])->name('khqr.image');

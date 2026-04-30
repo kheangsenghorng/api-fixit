@@ -36,12 +36,12 @@ Route::middleware([
 
         Route::prefix('service-bookings')->name('service-bookings.')->group(function () {
             Route::get('/user/{userId}', [ServiceBookingController::class, 'showByUserId'])
-                ->middleware('throttle:60,1')
+                ->middleware('throttle:300,1')
                 ->whereNumber('userId')
                 ->name('showByUserId');
         
             Route::get('/{serviceBooking}', [ServiceBookingController::class, 'show'])
-                ->middleware('throttle:60,1')
+                ->middleware('throttle:300,1')
                 ->whereNumber('serviceBooking')
                 ->name('show');
         

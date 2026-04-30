@@ -21,10 +21,10 @@ class PaymentSplit extends Model
 
     public function owner()
     {
-        return $this->belongsTo(Owner::class);
+        return $this->belongsTo(Owner::class, 'owner_id');
     }
 
-    public function payout()
+    public function ownerPayout()
     {
         return $this->hasOne(OwnerPayout::class, 'split_id');
     }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\CouponUsageController;
+use App\Http\Controllers\Api\Owner\OwnerPayoutController;
 use App\Http\Controllers\Api\Owner\OwnerUserController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
@@ -21,7 +22,6 @@ Route::middleware([
     'auth:api',
     IsActive::class,
     RoleMiddleware::class . ':owner',
-    'throttle:60,1',
 ])
     ->prefix('owner')
     ->group(function () {
@@ -35,22 +35,18 @@ Route::middleware([
         Route::prefix('users')->group(function () {
             Route::get('/', [OwnerUserController::class, 'index']);
 
-            Route::post('/', [OwnerUserController::class, 'store'])
-                ->middleware('throttle:20,1');
+            Route::post('/', [OwnerUserController::class, 'store']);
 
             Route::get('/{user}', [UserController::class, 'show'])
                 ->whereNumber('user');
 
             Route::put('/{user}', [UserController::class, 'update'])
-                ->middleware('throttle:20,1')
                 ->whereNumber('user');
 
             Route::delete('/{user}', [UserController::class, 'destroy'])
-                ->middleware('throttle:5,1')
                 ->whereNumber('user');
 
             Route::post('/{user}/avatar', [UserController::class, 'updateAvatar'])
-                ->middleware('throttle:10,1')
                 ->whereNumber('user');
         });
 
@@ -61,22 +57,18 @@ Route::middleware([
         */
 
         Route::prefix('owners')->group(function () {
-            Route::post('/', [OwnerController::class, 'store'])
-                ->middleware('throttle:10,1');
+            Route::post('/', [OwnerController::class, 'store']);
 
             Route::get('/{owner}', [OwnerController::class, 'show'])
                 ->whereNumber('owner');
 
             Route::put('/{owner}', [OwnerController::class, 'update'])
-                ->middleware('throttle:20,1')
                 ->whereNumber('owner');
 
             Route::delete('/{owner}', [OwnerController::class, 'destroy'])
-                ->middleware('throttle:5,1')
                 ->whereNumber('owner');
 
             Route::delete('/{owner}/image', [OwnerController::class, 'deleteImage'])
-                ->middleware('throttle:10,1')
                 ->whereNumber('owner');
         });
 
@@ -89,18 +81,15 @@ Route::middleware([
         Route::prefix('owner-documents')->group(function () {
             Route::get('/', [OwnerDocumentController::class, 'index']);
 
-            Route::post('/', [OwnerDocumentController::class, 'store'])
-                ->middleware('throttle:10,1');
+            Route::post('/', [OwnerDocumentController::class, 'store']);
 
             Route::get('/{ownerDocument}', [OwnerDocumentController::class, 'show'])
                 ->whereNumber('ownerDocument');
 
             Route::put('/{ownerDocument}', [OwnerDocumentController::class, 'update'])
-                ->middleware('throttle:10,1')
                 ->whereNumber('ownerDocument');
 
             Route::delete('/{ownerDocument}', [OwnerDocumentController::class, 'destroy'])
-                ->middleware('throttle:5,1')
                 ->whereNumber('ownerDocument');
         });
 
@@ -114,8 +103,7 @@ Route::middleware([
             Route::get('/', [CategoryController::class, 'index']);
             Route::get('/active', [CategoryController::class, 'activeCategories']);
 
-            Route::post('/', [CategoryController::class, 'store'])
-                ->middleware('throttle:20,1');
+            Route::post('/', [CategoryController::class, 'store']);
         });
 
         /*
@@ -128,8 +116,7 @@ Route::middleware([
             Route::get('/', [TypeController::class, 'index']);
             Route::get('/active', [TypeController::class, 'active']);
 
-            Route::post('/', [TypeController::class, 'store'])
-                ->middleware('throttle:20,1');
+            Route::post('/', [TypeController::class, 'store']);
         });
 
         /*
@@ -145,25 +132,20 @@ Route::middleware([
             Route::post('/', [ServiceController::class, 'store'])
                 ->middleware([
                     CheckOwnerDocument::class,
-                    'throttle:10,1',
                 ]);
 
-            Route::patch('/status/bulk', [ServiceController::class, 'updateManyStatus'])
-                ->middleware('throttle:10,1');
+            Route::patch('/status/bulk', [ServiceController::class, 'updateManyStatus']);
 
             Route::get('/{service}', [ServiceController::class, 'show'])
                 ->whereNumber('service');
 
             Route::put('/{service}', [ServiceController::class, 'update'])
-                ->middleware('throttle:20,1')
                 ->whereNumber('service');
 
             Route::delete('/{service}', [ServiceController::class, 'destroy'])
-                ->middleware('throttle:5,1')
                 ->whereNumber('service');
 
             Route::delete('/{service}/image', [ServiceController::class, 'deleteImage'])
-                ->middleware('throttle:10,1')
                 ->whereNumber('service');
         });
 
@@ -173,8 +155,7 @@ Route::middleware([
         |--------------------------------------------------------------------------
         */
 
-        Route::apiResource('coupon-usages', CouponUsageController::class)
-            ->middleware('throttle:30,1');
+        Route::apiResource('coupon-usages', CouponUsageController::class);
 
         /*
         |--------------------------------------------------------------------------
@@ -194,11 +175,9 @@ Route::middleware([
                 ->whereNumber('coupon');
 
             Route::put('/{coupon}', [CouponController::class, 'update'])
-                ->middleware('throttle:20,1')
                 ->whereNumber('coupon');
 
             Route::delete('/{coupon}', [CouponController::class, 'destroy'])
-                ->middleware('throttle:5,1')
                 ->whereNumber('coupon');
         });
 
@@ -220,7 +199,6 @@ Route::middleware([
                 ->whereNumber('service_booking');
 
             Route::match(['put', 'patch'], '/{service_booking}', [ServiceBookingController::class, 'update'])
-                ->middleware('throttle:20,1')
                 ->whereNumber('service_booking');
         });
 
@@ -233,50 +211,77 @@ Route::middleware([
         Route::prefix('payment-accounts')->group(function () {
             Route::get('/', [PaymentAccountController::class, 'index']);
 
-            Route::post('/', [PaymentAccountController::class, 'store'])
-                ->middleware('throttle:10,1');
+            Route::post('/', [PaymentAccountController::class, 'store']);
 
             Route::get('/user/{userId}', [PaymentAccountController::class, 'showByUser'])
                 ->whereNumber('userId');
 
             Route::get('/check-company/{userId}', [PaymentAccountController::class, 'checkCompanyBankAccount'])
-                ->middleware('throttle:190,1')
                 ->whereNumber('userId');
 
             Route::get('/{id}', [PaymentAccountController::class, 'show'])
                 ->whereNumber('id');
 
             Route::match(['put', 'patch'], '/{id}', [PaymentAccountController::class, 'update'])
-                ->middleware('throttle:10,1')
                 ->whereNumber('id');
 
             Route::delete('/{id}', [PaymentAccountController::class, 'destroy'])
-                ->middleware('throttle:5,1')
                 ->whereNumber('id');
         });
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Payment Accounts
-        |--------------------------------------------------------------------------
-        */
+     /*
+    |--------------------------------------------------------------------------
+    | Service Booking Providers
+    |--------------------------------------------------------------------------
+    */
 
-     Route::prefix('service-booking-providers')
-        ->name('owner.service-booking-providers.')
-        ->group(function () {
-            Route::get('/', [ServiceBookingProviderController::class, 'index'])->name('index');
-            Route::post('/', [ServiceBookingProviderController::class, 'store'])->name('store');
-    
-            Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
-                ->name('by-booking');
-    
-            Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
-                ->name('by-provider');
-    
-            Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])->name('show');
-            Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('update');
-            Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])->name('patch');
-            Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])->name('destroy');
-        });
+    Route::prefix('service-booking-providers')
+    ->name('owner.service-booking-providers.')
+    ->group(function () {
+        Route::get('/', [ServiceBookingProviderController::class, 'index'])
+            ->name('index');
+
+        Route::post('/', [ServiceBookingProviderController::class, 'store'])
+            ->name('store');
+
+        Route::get('/booking/{bookingId}', [ServiceBookingProviderController::class, 'showByBookingId'])
+            ->whereNumber('bookingId')
+            ->name('by-booking');
+
+        Route::get('/provider/{providerId}', [ServiceBookingProviderController::class, 'showByProviderId'])
+            ->whereNumber('providerId')
+            ->name('by-provider');
+
+        Route::get('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'show'])
+            ->whereNumber('serviceBookingProvider')
+            ->name('show');
+
+        Route::put('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])
+            ->whereNumber('serviceBookingProvider')
+            ->name('update');
+
+        Route::patch('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'update'])
+            ->whereNumber('serviceBookingProvider')
+            ->name('patch');
+
+        Route::delete('/{serviceBookingProvider}', [ServiceBookingProviderController::class, 'destroy'])
+            ->whereNumber('serviceBookingProvider')
+            ->name('destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Owner Payouts
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('payouts')->group(function () {
+    Route::get('/', [OwnerPayoutController::class, 'index']);
+
+    Route::get('/stats', [OwnerPayoutController::class, 'stats']);
+
+    Route::get('/{id}', [OwnerPayoutController::class, 'show'])
+        ->whereNumber('id');
+    });
  });
