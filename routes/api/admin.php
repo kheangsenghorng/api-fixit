@@ -199,13 +199,15 @@ Route::middleware([
     Route::prefix('owner-payouts')->group(function () {
         Route::get('/', [AdminOwnerPayoutController::class, 'index']);
         Route::get('/stats', [AdminOwnerPayoutController::class, 'stats']);
+        Route::get('/amount-by-owner', [AdminOwnerPayoutController::class, 'amountByOwner']);
+        Route::get('/{id}', [AdminOwnerPayoutController::class, 'show'])
+        ->whereNumber('id');
         Route::post('/pay-multiple-send-email', [AdminOwnerPayoutController::class, 'payMultipleAndSendEmail']);
 
         Route::patch('/{id}/status', [AdminOwnerPayoutController::class, 'updateStatus'])
             ->whereNumber('id');
 
-        Route::get('/{id}', [AdminOwnerPayoutController::class, 'show'])
-            ->whereNumber('id');
+       
     });
 
 });

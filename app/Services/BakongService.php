@@ -106,7 +106,7 @@ class BakongService
             'bakong_account_id'       => $payload['bakong_account_id'] ?? null,
             'merchant_id'             => $payload['merchant_id'] ?? null,
             'acquiring_bank'          => $payload['acquiring_bank'] ?? null,
-            'currency'                => strtoupper($payload['currency'] ?? 'KHR'),
+            'currency'                => strtolower($payload['currency'] ?? 'usd'),
             'amount'                  => $payload['amount'] ?? null,
             'merchant_name'           => $payload['merchant_name'] ?? null,
             'merchant_city'           => $payload['merchant_city'] ?? 'Phnom Penh',
@@ -117,7 +117,7 @@ class BakongService
             'purpose_of_transaction'  => $payload['purpose_of_transaction'] ?? null,
             'upi_account_information' => $payload['upi_account_information'] ?? null,
             'expiration_timestamp'    => $payload['expiration_timestamp'] ?? null,
-            'merchant_category_code'  => $payload['merchant_category_code'] ?? null,
+            'merchant_category_code'  => $payload['merchant_category_code'] ?? '5999',
         ]);
     }
 

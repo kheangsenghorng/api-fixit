@@ -13,7 +13,6 @@ Route::middleware([
         'auth:api',
         IsActive::class,
         RoleMiddleware::class . ':customer',
-        'throttle:60,1',
     ])
     ->prefix('customer')
     ->name('customer.')
@@ -36,12 +35,12 @@ Route::middleware([
 
         Route::prefix('service-bookings')->name('service-bookings.')->group(function () {
             Route::get('/user/{userId}', [ServiceBookingController::class, 'showByUserId'])
-                ->middleware('throttle:300,1')
+    
                 ->whereNumber('userId')
                 ->name('showByUserId');
         
             Route::get('/{serviceBooking}', [ServiceBookingController::class, 'show'])
-                ->middleware('throttle:300,1')
+             
                 ->whereNumber('serviceBooking')
                 ->name('show');
         
@@ -50,8 +49,7 @@ Route::middleware([
                 ->name('store');
         });
 
-        Route::apiResource('payments', PaymentController::class)
-            ->middleware('throttle:20,1');
+        Route::apiResource('payments', PaymentController::class);
 
         Route::prefix('service-booking-providers')
         ->name('service-booking-providers.')

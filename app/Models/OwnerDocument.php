@@ -36,6 +36,9 @@ class OwnerDocument extends Model
         'otp_verified_at' => 'datetime',
         'otp_last_sent_at' => 'datetime',
         'reviewed_at' => 'datetime',
+
+        'otp_attempts' => 'integer',
+        'size' => 'integer',
     ];
 
     public function owner(): BelongsTo

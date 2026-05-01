@@ -212,10 +212,7 @@ Route::middleware([
             Route::get('/', [PaymentAccountController::class, 'index']);
 
             Route::post('/', [PaymentAccountController::class, 'store']);
-
-            Route::get('/user/{userId}', [PaymentAccountController::class, 'showByUser'])
-                ->whereNumber('userId');
-
+            
             Route::get('/check-company/{userId}', [PaymentAccountController::class, 'checkCompanyBankAccount'])
                 ->whereNumber('userId');
 

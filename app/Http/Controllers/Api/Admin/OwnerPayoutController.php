@@ -5,13 +5,15 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\OwnerPayout;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OwnerPayoutPaidMail;
 use App\Models\Owner;
 
 class OwnerPayoutController extends Controller
 {
+    // This method provides a paginated list of 
+    //owner payouts with optional filters for owner, 
+    //status, and date range.
     public function index(Request $request)
     {
         $query = OwnerPayout::with(['owner', 'split.payment']);
@@ -41,6 +43,8 @@ class OwnerPayoutController extends Controller
         ]);
     }
 
+    // This method provides aggregated payout statistics with 
+    //optional filters for owner and date range.
     public function stats(Request $request)
     {
         $query = OwnerPayout::query();
@@ -74,7 +78,65 @@ class OwnerPayoutController extends Controller
             ],
         ]);
     }
+    
+    // This method provides aggregated payout data grouped by owner, with optional 
+    //date filters and a monthly filter.
+    public function amountByOwner(Request $request)
+    {
+        $query = OwnerPayout::query()
+            ->join('owners', 'owner_payouts.owner_id', '=', 'owners.id')
+            ->join('users', 'owners.user_id', '=', 'users.id');
+    
+        // Optional filters
+        if ($request->filled('from_date')) {
+            $query->whereDate('owner_payouts.created_at', '>=', $request->from_date);
+        }
+    
+        if ($request->filled('to_date')) {
+            $query->whereDate('owner_payouts.created_at', '<=', $request->to_date);
+        }
+    
+        // Optional monthly filter
+        if ($request->boolean('monthly')) {
+            $query->whereMonth('owner_payouts.created_at', now()->month)
+                  ->whereYear('owner_payouts.created_at', now()->year);
+        }
+    
+        $data = $query
+            ->select([
+                'owner_payouts.owner_id',
+                'owners.business_name',
+                'owners.user_id',
+                'users.name as owner_name',
+            ])
+            ->selectRaw('COUNT(owner_payouts.id) as total_payouts')
+            ->selectRaw("SUM(owner_payouts.status = 'pending') as pending_count")
+            ->selectRaw("SUM(owner_payouts.status = 'paid') as paid_count")
+            ->selectRaw("SUM(owner_payouts.status = 'failed') as failed_count")
+            ->selectRaw("COALESCE(SUM(CASE WHEN owner_payouts.status = 'pending' THEN owner_payouts.amount ELSE 0 END), 0) as pending_amount")
+            ->selectRaw("COALESCE(SUM(CASE WHEN owner_payouts.status = 'paid' THEN owner_payouts.amount ELSE 0 END), 0) as paid_amount")
+            ->selectRaw("COALESCE(SUM(CASE WHEN owner_payouts.status = 'failed' THEN owner_payouts.amount ELSE 0 END), 0) as failed_amount")
+            ->selectRaw('COALESCE(SUM(owner_payouts.amount), 0) as total_amount')
+            ->groupBy([
+                'owner_payouts.owner_id',
+                'owners.business_name',
+                'owners.user_id',
+                'users.name',
+            ])
+            ->orderByDesc('total_amount')
+            ->get();
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Owner payout amounts fetched successfully',
+            'data' => $data,
+        ]);
+    }
 
+
+
+    // This method retrieves detailed information about a specific owner payout,
+    /// including related owner and payment data.
     public function show($id)
     {
         $payout = OwnerPayout::with(['owner', 'split.payment'])->findOrFail($id);
@@ -85,7 +147,8 @@ class OwnerPayoutController extends Controller
             'data' => $payout,
         ]);
     }
-
+    // This method allows updating the status of an owner payout,
+    // along with an optional transaction reference.
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -107,78 +170,84 @@ class OwnerPayoutController extends Controller
             'data' => $payout,
         ]);
     }
+
+    // This method processes multiple owner payouts as paid, updates 
+    //their status and transaction reference, and sends an email notification to the owner.
     public function payMultipleAndSendEmail(Request $request)
-    {
-        $request->validate([
-            'owner_id' => 'required|exists:owners,id',
-            'payout_ids' => 'required|array|min:1',
-            'payout_ids.*' => 'required|integer|exists:owner_payouts,id',
-            'method' => 'required|in:bank_transfer,card,cash,bakong,khqr',
-            'transaction_reference' => 'required|string|max:255',
+{
+    $validated = $request->validate([
+        'owner_id' => ['required', 'exists:owners,id'],
+        'payout_ids' => ['required', 'array', 'min:1'],
+        'payout_ids.*' => ['integer', 'distinct'],
+        'method' => ['required', 'in:bank_transfer,card,cash,bakong,khqr'],
+        'transaction_reference' => ['required', 'string', 'max:255'],
+    ]);
+
+    $owner = Owner::select('id', 'user_id')
+        ->with('user:id,email')
+        ->findOrFail($validated['owner_id']);
+
+    $payoutIds = array_unique($validated['payout_ids']);
+
+    // 🚀 FAST: Only count, no heavy loading
+    $validCount = OwnerPayout::where('owner_id', $owner->id)
+        ->whereIn('id', $payoutIds)
+        ->where('status', 'pending')
+        ->count();
+
+    if ($validCount !== count($payoutIds)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid payouts.',
+        ], 422);
+    }
+
+    // 🚀 FAST: get total only (no collection)
+    $totalAmount = OwnerPayout::whereIn('id', $payoutIds)->sum('amount');
+
+    $paidAt = now();
+
+    // 🚀 FASTEST: single query update
+    OwnerPayout::where('owner_id', $owner->id)
+        ->whereIn('id', $payoutIds)
+        ->where('status', 'pending')
+        ->update([
+            'method' => $validated['method'],
+            'status' => 'paid',
+            'transaction_reference' => $validated['transaction_reference'],
+            'paid_at' => $paidAt,
+            'updated_at' => $paidAt,
         ]);
-    
-        $owner = Owner::with('user')->findOrFail($request->owner_id);
-    
-        $payouts = OwnerPayout::with(['split.payment', 'owner.user'])
-            ->where('owner_id', $request->owner_id)
-            ->whereIn('id', $request->payout_ids)
-            ->where('status', 'pending')
-            ->get();
-    
-        if ($payouts->count() !== count($request->payout_ids)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Some payouts are invalid, already paid, or do not belong to this owner.',
-            ], 422);
-        }
-    
-        $totalAmount = $payouts->sum('amount');
-    
-        DB::transaction(function () use ($payouts, $request) {
-            foreach ($payouts as $payout) {
-                $payout->update([
-                    'method' => $request->method,
-                    'status' => 'paid',
-                    'transaction_reference' => $request->transaction_reference,
-                    'paid_at' => now(),
-                ]);
-            }
-        });
-    
-        if ($owner->user && $owner->user->email) {
+
+    // 🚀 OPTIONAL: Only load data IF you really need response items
+    // (this is expensive — skip if not needed)
+    $items = OwnerPayout::select('id', 'amount', 'method', 'status')
+        ->whereIn('id', $payoutIds)
+        ->get();
+
+    // 🚀 QUEUE email (never send sync)
+    if ($owner->user?->email) {
+        dispatch(function () use ($owner, $payoutIds, $totalAmount, $validated) {
             Mail::to($owner->user->email)->send(
                 new OwnerPayoutPaidMail(
                     $owner,
-                    $payouts,
+                    $payoutIds, // pass IDs instead of full models (lighter!)
                     $totalAmount,
-                    $request->transaction_reference
+                    $validated['transaction_reference']
                 )
             );
-        }
-    
-        return response()->json([
-            'success' => true,
-            'message' => 'Owner payouts paid and email sent successfully.',
-            'data' => [
-                'owner_id' => $owner->id,
-                'owner_email' => $owner->user->email ?? null,
-                'total_payouts' => $payouts->count(),
-                'total_amount' => round((float) $totalAmount, 2),
-                'transaction_reference' => $request->transaction_reference,
-                'items' => $payouts->map(function ($payout) {
-                    $payment = $payout->split->payment ?? null;
-    
-                    return [
-                        'payout_id' => $payout->id,
-                        'payment_id' => $payment->id ?? null,
-                        'user_id' => $payment->user_id ?? null,
-                        'service_booking_id' => $payment->service_booking_id ?? null,
-                        'amount' => $payout->amount,
-                        'method' => $payout->method,
-                        'status' => $payout->status,
-                    ];
-                }),
-            ],
-        ]);
+        })->afterResponse(); // 🔥 does not block API
     }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Paid successfully',
+        'data' => [
+            'owner_id' => $owner->id,
+            'total_payouts' => count($payoutIds),
+            'total_amount' => (float) $totalAmount,
+            'items' => $items, // remove this if not needed → even faster
+        ],
+    ]);
+}
 }
