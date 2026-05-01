@@ -135,9 +135,13 @@ class PaymentController extends Controller
 
     public function generateMerchantKhqr(Request $request)
     {
-        $result = $this->bakongService->generateMerchantKhqr($request->all());
-
-        return response()->json($result, $result['success'] ? 200 : 400);
+        $payload = $request->all();
+    
+        $payload['currency'] = 'usd';
+    
+        $result = $this->bakongService->generateMerchantKhqr($payload);
+    
+        return response()->json($result, !empty($result['success']) ? 200 : 400);
     }
 
     public function generateKhqrImage(Request $request)
@@ -297,50 +301,4 @@ class PaymentController extends Controller
         ]);
     }
   
-    
-    public function downloadPaymentQr(Request $request)
-    {
-        $validated = $request->validate([
-            'qr' => ['required', 'string'],
-        ]);
-    
-        $imageResult = $this->bakongService->generateKhqrImage([
-            'qr' => $validated['qr'],
-        ]);
-    
-        if (($imageResult['data']['status']['code'] ?? 1) !== 0) {
-            return response()->json([
-                'success' => false,
-                'message' => $imageResult['data']['status']['message'] ?? 'QR generation failed',
-                'response' => $imageResult,
-            ], 422);
-        }
-    
-        $image = $imageResult['data']['data']['image'] ?? null;
-    
-        if (!$image) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to generate QR image',
-                'response' => $imageResult,
-            ], 422);
-        }
-    
-        $prefix = 'data:image/svg+xml;base64,';
-    
-        $base64 = str_replace($prefix, '', $image);
-        $svg = base64_decode($base64, true);
-    
-        if ($svg === false) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid SVG image data',
-            ], 422);
-        }
-    
-        return response($svg, 200, [
-            'Content-Type' => 'image/svg+xml',
-            'Content-Disposition' => 'attachment; filename="khqr-payment.svg"',
-        ]);
-    }
 }

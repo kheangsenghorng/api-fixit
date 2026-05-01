@@ -45,7 +45,7 @@ return [
         'gateway_url' => env('TELEGRAM_GATEWAY_URL'),
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         'chat_id' => env('TELEGRAM_CHAT_ID'),
-   ],
+    ],
    'bakong_gateway' => [
         'url' => env('GATEWAY_BAKONG_API_URL', 'https://gateway.servicemeite.io'),
         'api_key' => env('GATEWAY_BAKONG_API_KEY'),

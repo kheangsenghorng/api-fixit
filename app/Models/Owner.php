@@ -106,4 +106,8 @@ class Owner extends Model
         {
             return $this->hasOne(OwnerDocument::class)->latestOfMany();
         }
+        public function paymentSplits()
+        {
+            return $this->hasMany(PaymentSplit::class, 'owner_id');
+        }
 }

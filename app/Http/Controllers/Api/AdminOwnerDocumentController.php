@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Log;
 
 class AdminOwnerDocumentController extends Controller
 {
@@ -168,19 +169,22 @@ class AdminOwnerDocumentController extends Controller
             ->response()
             ->setStatusCode(201);
     }
-
+    
     public function sendOtp(Request $request, OwnerDocument $ownerDocument)
     {
-        // ✅ auto-clear if old OTP expired
         $this->clearOtpIfExpired($ownerDocument);
-
-        // ✅ throttle 30 seconds (safe + simple)
-        if ($ownerDocument->otp_last_sent_at && $ownerDocument->otp_last_sent_at->gt(now()->subSeconds(30))) {
-            return response()->json(['message' => 'Please wait before requesting OTP again.'], 429);
+    
+        if (
+            $ownerDocument->otp_last_sent_at &&
+            $ownerDocument->otp_last_sent_at->gt(now()->subSeconds(30))
+        ) {
+            return response()->json([
+                'message' => 'Please wait before requesting OTP again.',
+            ], 429);
         }
-
+    
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
+    
         $ownerDocument->forceFill([
             'otp_hash' => Hash::make($otp),
             'otp_expires_at' => now()->addMinutes(5),
@@ -188,55 +192,62 @@ class AdminOwnerDocumentController extends Controller
             'otp_verified_at' => null,
             'otp_last_sent_at' => now(),
         ])->save();
-
-        // ✅ URL for Telegram inline button
-        // Set APP_FRONTEND_URL in .env like: https://your-frontend.com
+    
         $frontendBase = rtrim(config('app.frontend_url') ?? env('APP_FRONTEND_URL', ''), '/');
-        $frontendVerifyUrl = $frontendBase
+    
+        $isInvalidTelegramUrl = !$frontendBase
+            || str_contains($frontendBase, 'localhost')
+            || str_contains($frontendBase, '127.0.0.1');
+    
+        $frontendVerifyUrl = !$isInvalidTelegramUrl
             ? "{$frontendBase}/admin/owner-documents/{$ownerDocument->id}?action=verify-otp"
             : null;
-
+    
         try {
             $message = "🔐 <b>OTP for OwnerDocument #{$ownerDocument->id}</b>\n\n"
                 . "<code>{$otp}</code>\n\n"
                 . "⏱ Expires: 5 minutes";
-
+    
             $replyMarkup = null;
-
+    
             if ($frontendVerifyUrl) {
                 $replyMarkup = [
                     'inline_keyboard' => [
                         [
-                            ['text' => '✅ Verify OTP', 'url' => $frontendVerifyUrl],
+                            [
+                                'text' => '✅ Verify OTP',
+                                'url' => $frontendVerifyUrl,
+                            ],
                         ],
                     ],
                 ];
             }
-
+    
             TelegramNotifier::send($message, 'HTML', $replyMarkup);
         } catch (\Throwable $e) {
-            \Log::error('Telegram send failed', [
+            Log::error('Telegram send failed', [
                 'doc_id' => $ownerDocument->id,
                 'error' => $e->getMessage(),
             ]);
-
+    
             return response()->json([
                 'message' => 'Telegram send failed',
                 'error' => $e->getMessage(),
                 'data' => new OwnerDocumentResource($ownerDocument->fresh()),
             ], 500);
         }
-
-        // ✅ return copy text so frontend can copy instantly
+    
         $copyText = "🔐 OTP for OwnerDocument #{$ownerDocument->id}\nCode: {$otp}\nExpires: 5 minutes";
-
+    
         return response()->json([
-            'message' => 'OTP sent to Telegram.',
+            'message' => $frontendVerifyUrl
+                ? 'OTP sent to Telegram.'
+                : 'OTP sent to Telegram without verify button because frontend URL is local.',
             'copy_text' => $copyText,
+            'verify_url' => $frontendVerifyUrl,
             'data' => new OwnerDocumentResource($ownerDocument->fresh()),
         ]);
     }
-
     public function verifyOtp(Request $request, OwnerDocument $ownerDocument)
     {
         $request->validate([
@@ -263,7 +274,7 @@ class AdminOwnerDocumentController extends Controller
             return response()->json(['message' => 'Invalid OTP'], 400);
         }
 
-        // ✅ success: mark verified + clear OTP to prevent reuse
+        // success: mark verified + clear OTP to prevent reuse
         $ownerDocument->forceFill([
             'otp_verified_at' => now(),
             'otp_attempts' => 0,
@@ -271,7 +282,7 @@ class AdminOwnerDocumentController extends Controller
             'otp_expires_at' => null,
         ])->save();
 
-        // ✅ signed download URL (10 minutes)
+        // signed download URL (10 minutes)
         $url = URL::temporarySignedRoute(
             'admin.owner-documents.download',
             now()->addMinutes(10),

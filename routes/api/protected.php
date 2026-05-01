@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\CouponUsageController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
+use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\ServiceBookingController;
@@ -76,7 +77,6 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/khqr/check-hash', [PaymentController::class, 'checkTransactionByHash'])->name('khqr.check-hash');
         Route::post('/khqr/check-account', [PaymentController::class, 'checkBakongAccount'])->name('khqr.check-account');
         Route::post('/khqr/check-external-ref', [PaymentController::class, 'checkTransactionByExternalRef'])->name('khqr.check-external-ref');
-        Route::post('/download-qr', [PaymentController::class, 'downloadPaymentQr'])->name('download-qr');
     });
 
     Route::post('/generate-payment', [PaymentController::class, 'generatePayment'])
@@ -94,6 +94,13 @@ Route::middleware(['auth:api'])->group(function () {
         Route::put('/{id}', [ProviderController::class, 'update']);
         Route::patch('/{id}', [ProviderController::class, 'update']);
         Route::delete('/{id}', [ProviderController::class, 'destroy']);
+    });
+
+  
+    Route::prefix('payment-accounts')->group(function () {
+    
+        Route::get('/user/{userId}', [PaymentAccountController::class, 'showByUser'])
+            ->whereNumber('userId');
     });
 
     // Route::middleware(['auth:api', 'role:admin,owner,provider'])
