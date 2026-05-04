@@ -88,4 +88,13 @@ class Service extends Model
     {
         return $this->hasMany(ServicePackage::class);
     }
+    public function taskGroups()
+    {
+        return $this->hasMany(TaskGroup::class);
+    }
+
+    public function includedItems()
+    {
+        return $this->hasMany(IncludedItem::class);
+    }
 }
