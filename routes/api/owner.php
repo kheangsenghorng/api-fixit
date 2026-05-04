@@ -154,16 +154,14 @@ Route::middleware([
         | Services packages
         |--------------------------------------------------------------------------
         */
-        Route::prefix('service-packages')->name('service-packages.')->group(function () {
-            Route::get('/', [ServicePackageController::class, 'index'])
-                ->name('index');
+        Route::prefix('service-packages')->name('owner.service-packages.')->group(function () {
+            Route::get('/', [ServicePackageController::class, 'index'])->name('index');
         
             Route::get('/service/{serviceId}', [ServicePackageController::class, 'showByServiceId'])
                 ->whereNumber('serviceId')
                 ->name('by-service');
         
-            Route::post('/', [ServicePackageController::class, 'store'])
-                ->name('store');
+            Route::post('/', [ServicePackageController::class, 'store'])->name('store');
         
             Route::patch('/status/bulk', [ServicePackageController::class, 'updateManyStatus'])
                 ->name('status.bulk');
