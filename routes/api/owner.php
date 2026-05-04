@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
 use App\Http\Controllers\Api\ServiceController;
+use App\Http\Controllers\Api\ServicePackageController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\CheckOwnerDocument;
@@ -148,7 +149,40 @@ Route::middleware([
             Route::delete('/{service}/image', [ServiceController::class, 'deleteImage'])
                 ->whereNumber('service');
         });
-
+        /*
+        |--------------------------------------------------------------------------
+        | Services packages
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('service-packages')->name('service-packages.')->group(function () {
+            Route::get('/', [ServicePackageController::class, 'index'])
+                ->name('index');
+        
+            Route::get('/service/{serviceId}', [ServicePackageController::class, 'showByServiceId'])
+                ->whereNumber('serviceId')
+                ->name('by-service');
+        
+            Route::post('/', [ServicePackageController::class, 'store'])
+                ->name('store');
+        
+            Route::patch('/status/bulk', [ServicePackageController::class, 'updateManyStatus'])
+                ->name('status.bulk');
+        
+            Route::delete('/bulk', [ServicePackageController::class, 'destroyMany'])
+                ->name('bulk.destroy');
+        
+            Route::get('/{servicePackage}', [ServicePackageController::class, 'show'])
+                ->whereNumber('servicePackage')
+                ->name('show');
+        
+            Route::put('/{servicePackage}', [ServicePackageController::class, 'update'])
+                ->whereNumber('servicePackage')
+                ->name('update');
+        
+            Route::delete('/{servicePackage}', [ServicePackageController::class, 'destroy'])
+                ->whereNumber('servicePackage')
+                ->name('destroy');
+        });
         /*
         |--------------------------------------------------------------------------
         | Coupon Usages

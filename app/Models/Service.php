@@ -15,13 +15,8 @@ class Service extends Model
         'type_id',
         'title',
         'description',
-        'base_price',
         'status',
         'images',
-        'duration',
-        'images',
-        'lat',
-        'lng',
     ];
 
     protected $casts = [
@@ -67,12 +62,12 @@ class Service extends Model
     {
         return $this->belongsTo(Type::class);
     }
-    
+
     public function bookings()
     {
         return $this->hasMany(ServiceBooking::class);
     }
-    
+
     public function payments()
     {
         return $this->hasManyThrough(
@@ -88,5 +83,9 @@ class Service extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+    public function packages()
+    {
+        return $this->hasMany(ServicePackage::class);
     }
 }

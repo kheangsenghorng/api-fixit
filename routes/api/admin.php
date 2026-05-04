@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\OwnerPayoutController as AdminOwnerPayoutCont
 use App\Http\Controllers\Api\Admin\PaymentSplitController as AdminPaymentSplitController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
 use App\Http\Controllers\Api\ServiceController;
+use App\Http\Controllers\Api\ServicePackageController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Middleware\CheckOwnerDocument;
 use App\Http\Middleware\IsActive;
@@ -175,6 +176,30 @@ Route::middleware([
         Route::delete('/{service}', [ServiceController::class, 'destroy'])
             ->whereNumber('service');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Services packages
+    |--------------------------------------------------------------------------
+    */
+
+    Route::apiResource('service-packages', ServicePackageController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Services packages many
+    |--------------------------------------------------------------------------
+    */
+
+    Route::delete('service-packages-destroy-many', [ServicePackageController::class, 'destroyMany']);
+    Route::patch('service-packages-update-many-status', [ServicePackageController::class, 'updateManyStatus']);
+
+
+     /*
+    |--------------------------------------------------------------------------
+    |service-booking-providers
+    |--------------------------------------------------------------------------
+    */
 
     Route::apiResource('service-booking-providers', ServiceBookingProviderController::class);
 

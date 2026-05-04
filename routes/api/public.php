@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Api\GeocodeController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ServiceController;
+use App\Http\Controllers\Api\ServicePackageController;
 use App\Http\Controllers\Auth\OtpEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,6 +67,9 @@ Route::prefix('service')
         Route::get('/search-active-services', [ServiceController::class, 'searchActiveServices']);
         Route::get('/{service}/serviceId', [ServiceController::class, 'show']);
     });
+
+// 🛠 Service packages
+Route::apiResource('service-packages', ServicePackageController::class);
 
 // 📄 Signed download
 Route::get('/owner-documents/{ownerDocument}/download', [AdminOwnerDocumentController::class, 'download'])
