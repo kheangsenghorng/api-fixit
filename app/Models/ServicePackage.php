@@ -32,4 +32,23 @@ class ServicePackage extends Model
     {
         return $this->belongsTo(Service::class);
     }
+    public function taskGroups()
+    {
+        return $this->belongsToMany(
+            TaskGroup::class,
+            'package_task_groups',
+            'package_id',
+            'task_group_id'
+        )->withPivot('sort_order')->withTimestamps();
+    }
+
+    public function includedItems()
+    {
+        return $this->belongsToMany(
+            IncludedItem::class,
+            'package_included_items',
+            'package_id',
+            'included_item_id'
+        )->withPivot('sort_order')->withTimestamps();
+    }
 }
