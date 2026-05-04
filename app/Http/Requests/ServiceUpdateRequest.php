@@ -23,12 +23,9 @@ class ServiceUpdateRequest extends FormRequest
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
 
-            'status' => ['in:draft,active,paused'],
+            'status' => ['sometimes', 'in:draft,active,paused'],
 
-            'base_price' => ['sometimes', 'numeric', 'min:0'],
-            'duration' => ['sometimes', 'integer', 'min:1'],
-
-            'images' => ['nullable', 'array', 'max:4'],
+            'images' => ['nullable', 'array', 'max:10'],
             'images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
@@ -37,7 +34,7 @@ class ServiceUpdateRequest extends FormRequest
     {
         return [
             'images.array' => 'Images must be sent as a list.',
-            'images.max' => 'You can upload up to 4 images only.',
+            'images.max' => 'You can upload up to 10 images only.',
 
             'images.*.file' => 'Each image must be a valid file.',
             'images.*.image' => 'Each file must be an image.',
@@ -53,7 +50,6 @@ class ServiceUpdateRequest extends FormRequest
             'owner_id' => 'owner',
             'category_id' => 'category',
             'type_id' => 'type',
-            'base_price' => 'base price',
             'images' => 'images',
             'images.*' => 'image',
         ];
@@ -68,6 +64,7 @@ class ServiceUpdateRequest extends FormRequest
         foreach ($errors as $field => $messages) {
             if (preg_match('/^images\.(\d+)$/', $field, $matches)) {
                 $index = (int) $matches[1] + 1;
+
                 $formattedErrors["images[$matches[1]]"] = array_map(
                     fn ($message) => str_replace('image', "image {$index}", $message),
                     $messages

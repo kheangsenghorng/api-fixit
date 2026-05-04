@@ -49,14 +49,6 @@ class ServiceController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('price_min')) {
-            $query->where('base_price', '>=', $request->price_min);
-        }
-
-        if ($request->filled('price_max')) {
-            $query->where('base_price', '<=', $request->price_max);
-        }
-
         if ($request->filled('rating')) {
             $query->whereHas('reviews', function ($q) use ($request) {
                 $q->where('rating', '>=', $request->rating);
@@ -97,6 +89,7 @@ class ServiceController extends Controller
             ]
         ]);
     }
+
     public function searchActiveServices(Request $request)
     {
         $query = Service::with(['category', 'type', 'owner'])
@@ -107,27 +100,34 @@ class ServiceController extends Controller
             ->whereHas('type', function ($q) {
                 $q->where('status', 'active');
             });
-    
+
         if ($request->filled('search')) {
             $keywords = explode(' ', $request->search);
-    
+
             $query->where(function ($q) use ($keywords) {
                 foreach ($keywords as $keyword) {
+                    $keyword = trim($keyword);
+
+                    if ($keyword === '') {
+                        continue;
+                    }
+
                     $q->where(function ($subQ) use ($keyword) {
-                        $subQ->where('title', 'like', '%' . $keyword . '%') // or name
-                             ->orWhereHas('category', function ($categoryQuery) use ($keyword) {
-                                 $categoryQuery->where('name', 'like', '%' . $keyword . '%');
-                             })
-                             ->orWhereHas('type', function ($typeQuery) use ($keyword) {
-                                 $typeQuery->where('name', 'like', '%' . $keyword . '%');
-                             });
+                        $subQ->where('title', 'like', '%' . $keyword . '%')
+                            ->orWhere('description', 'like', '%' . $keyword . '%')
+                            ->orWhereHas('category', function ($categoryQuery) use ($keyword) {
+                                $categoryQuery->where('name', 'like', '%' . $keyword . '%');
+                            })
+                            ->orWhereHas('type', function ($typeQuery) use ($keyword) {
+                                $typeQuery->where('name', 'like', '%' . $keyword . '%');
+                            });
                     });
                 }
             });
         }
-    
+
         $services = $query->latest()->paginate(10);
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Search active services',
@@ -137,16 +137,14 @@ class ServiceController extends Controller
 
     public function myServices(Request $request)
     {
-        $userId = Auth::check() ? Auth::id() : null;
-
-        if (!$userId) {
+        if (!Auth::check()) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not authenticated'
             ], 401);
         }
 
-        $owner = Owner::where('user_id', $userId)->firstOrFail();
+        $owner = Owner::where('user_id', Auth::id())->firstOrFail();
 
         $query = Service::with(['category', 'type', 'owner'])
             ->where('owner_id', $owner->id);
@@ -178,14 +176,6 @@ class ServiceController extends Controller
             $query->where('type_id', $request->type_id);
         }
 
-        if ($request->filled('price_min')) {
-            $query->where('base_price', '>=', $request->price_min);
-        }
-
-        if ($request->filled('price_max')) {
-            $query->where('base_price', '<=', $request->price_max);
-        }
-
         $services = $query->latest()->paginate(10);
 
         return response()->json([
@@ -199,7 +189,7 @@ class ServiceController extends Controller
             ]
         ]);
     }
-    
+
     public function serviceStats()
     {
         $owner = Owner::where('user_id', auth()->id())->firstOrFail();
@@ -264,7 +254,7 @@ class ServiceController extends Controller
     public function store(ServiceStoreRequest $request)
     {
         $data = $request->validated();
-        $data['status'] = 'active';
+        $data['status'] = $data['status'] ?? 'active';
 
         if (Auth::user()->role === 'admin') {
             if (!$request->owner_id) {
@@ -281,10 +271,16 @@ class ServiceController extends Controller
         }
 
         if ($request->hasFile('images')) {
-            $data['images'] = ImageUploadService::uploadMultiple(
-                $request->file('images'),
-                'services'
-            );
+            $images = $request->file('images');
+
+            if (count($images) > 10) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You can upload up to 10 images only.',
+                ], 422);
+            }
+
+            $data['images'] = ImageUploadService::uploadMultiple($images, 'services');
         }
 
         $service = Service::create($data);
@@ -320,15 +316,22 @@ class ServiceController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('images')) {
-            $newImages = ImageUploadService::uploadMultiple(
-                $request->file('images'),
-                'services'
-            );
+            $oldImages = $service->images ?? [];
+            $newFiles = $request->file('images');
 
-            $data['images'] = array_merge(
-                $service->images ?? [],
-                $newImages
-            );
+            if ((count($oldImages) + count($newFiles)) > 10) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This service can have up to 10 images only.',
+                    'current_images' => count($oldImages),
+                    'new_images' => count($newFiles),
+                    'max_images' => 10,
+                ], 422);
+            }
+
+            $newImages = ImageUploadService::uploadMultiple($newFiles, 'services');
+
+            $data['images'] = array_values(array_merge($oldImages, $newImages));
         }
 
         $service->update($data);
@@ -353,9 +356,12 @@ class ServiceController extends Controller
 
     public function destroyMany(Request $request)
     {
-        $ids = $request->ids;
+        $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['exists:services,id'],
+        ]);
 
-        $services = Service::whereIn('id', $ids)->get();
+        $services = Service::whereIn('id', $request->ids)->get();
 
         foreach ($services as $service) {
             $service->delete();
@@ -370,9 +376,9 @@ class ServiceController extends Controller
     public function updateManyStatus(Request $request)
     {
         $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:services,id',
-            'status' => 'required|in:active,paused,draft'
+            'ids' => ['required', 'array'],
+            'ids.*' => ['exists:services,id'],
+            'status' => ['required', 'in:active,paused,draft'],
         ]);
 
         $services = Service::whereIn('id', $request->ids)->get();
@@ -392,7 +398,7 @@ class ServiceController extends Controller
     public function deleteImage(Request $request, Service $service)
     {
         $request->validate([
-            'image' => 'required|string'
+            'image' => ['required', 'string']
         ]);
 
         $image = $request->image;
