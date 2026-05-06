@@ -299,8 +299,21 @@ class ServiceController extends Controller
             'owner',
             'category',
             'type',
+    
+            'packages' => function ($query) {
+                $query->orderBy('id');
+            },
+    
+            'packages.taskGroups' => function ($query) {
+                $query->orderByPivot('sort_order');
+            },
+    
             'packages.taskGroups.taskItems',
-            'packages.includedItems',
+    
+            'packages.includedItems' => function ($query) {
+                $query->orderByPivot('sort_order');
+            },
+    
             'taskGroups.taskItems',
             'includedItems',
         ])->find($id);

@@ -19,10 +19,6 @@ class ServiceResource extends JsonResource
             'service_packages' => ServicePackageResource::collection(
                 $this->whenLoaded('packages')
             ),
-            
-            'included_items' => IncludedItemResource::collection(
-                $this->whenLoaded('includedItems')
-            ),
 
             'title' => $this->title,
             'description' => $this->description,

@@ -49,6 +49,9 @@ class ServicePackage extends Model
             'package_included_items',
             'package_id',
             'included_item_id'
-        )->withPivot('sort_order')->withTimestamps();
+        )
+        ->withPivot('sort_order')
+        ->withTimestamps()
+        ->orderByPivot('sort_order');
     }
 }

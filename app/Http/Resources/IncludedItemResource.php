@@ -14,10 +14,12 @@ class IncludedItemResource extends JsonResource
             'service_id' => $this->service_id,
             'name' => $this->name,
             'description' => $this->description,
-            'image_url' => $this->image_url,
+           'image_url' => $this->image_url
+            ? asset('storage/' . $this->image_url)
+            : null,
             'status' => $this->status,
-
-            'sort_order' => $this->whenPivotLoaded('package_included_items', function () {
+ 
+           'sort_order' => $this->whenPivotLoaded('package_included_items', function () {
                 return $this->pivot->sort_order;
             }),
 

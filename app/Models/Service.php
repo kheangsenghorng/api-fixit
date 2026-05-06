@@ -84,10 +84,10 @@ class Service extends Model
     {
         return $this->hasMany(Review::class);
     }
-    public function packages()
-    {
-        return $this->hasMany(ServicePackage::class);
-    }
+ public function packages()
+{
+    return $this->hasMany(ServicePackage::class, 'service_id');
+}
     public function taskGroups()
     {
         return $this->hasMany(TaskGroup::class);
