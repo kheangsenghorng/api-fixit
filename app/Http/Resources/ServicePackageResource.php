@@ -11,9 +11,7 @@ class ServicePackageResource extends JsonResource
     {
         return [
             'id' => $this->id,
-
             'service_id' => $this->service_id,
-            'service' => new ServiceResource($this->whenLoaded('service')),
 
             'title' => $this->title,
             'description' => $this->description,
@@ -22,6 +20,7 @@ class ServicePackageResource extends JsonResource
             'max_area_m2' => $this->max_area_m2,
             'floor_number' => $this->floor_number,
             'bedrooms' => $this->bedrooms,
+
             'duration_hours' => $this->duration_hours,
             'workers_count' => $this->workers_count,
 
@@ -29,8 +28,15 @@ class ServicePackageResource extends JsonResource
             'billing_type' => $this->billing_type,
             'status' => $this->status,
 
+            'task_groups' => TaskGroupResource::collection(
+                $this->whenLoaded('taskGroups')
+            ),
+
+            'included_items' => IncludedItemResource::collection(
+                $this->whenLoaded('includedItems')
+            ),
+
             'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ];
     }
 }

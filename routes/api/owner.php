@@ -3,15 +3,20 @@
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\CouponUsageController;
+use App\Http\Controllers\Api\IncludedItemController;
 use App\Http\Controllers\Api\Owner\OwnerPayoutController;
 use App\Http\Controllers\Api\Owner\OwnerUserController;
 use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
+use App\Http\Controllers\Api\PackageIncludedItemController;
+use App\Http\Controllers\Api\PackageTaskGroupController;
 use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\ServicePackageController;
+use App\Http\Controllers\Api\TaskGroupController;
+use App\Http\Controllers\Api\TaskItemController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\CheckOwnerDocument;
@@ -181,6 +186,13 @@ Route::middleware([
                 ->whereNumber('servicePackage')
                 ->name('destroy');
         });
+
+
+        Route::apiResource('task-groups', TaskGroupController::class);
+        Route::apiResource('task-items', TaskItemController::class);
+        Route::apiResource('included-items', IncludedItemController::class);
+        Route::apiResource('package-included-items', PackageIncludedItemController::class);
+        Route::apiResource('package-task-groups', PackageTaskGroupController::class);
         /*
         |--------------------------------------------------------------------------
         | Coupon Usages

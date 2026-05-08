@@ -231,19 +231,19 @@ class ServiceController extends Controller
 
     public function activeServices(Request $request)
     {
-        $query = Service::with(['category', 'type', 'owner'])
+        $query = Service::with(['category', 'type', 'owner', 'packages'])
             ->where('status', 'active');
-
+    
         if ($request->filled('type_id')) {
             $query->where('type_id', $request->type_id);
         }
-
+    
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
-
+    
         $services = $query->latest()->paginate(10);
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Active services',
@@ -295,15 +295,36 @@ class ServiceController extends Controller
 
     public function show($id)
     {
-        $service = Service::with(['owner', 'category', 'type'])->find($id);
-
+        $service = Service::with([
+            'owner',
+            'category',
+            'type',
+    
+            'packages' => function ($query) {
+                $query->orderBy('id');
+            },
+    
+            'packages.taskGroups' => function ($query) {
+                $query->orderByPivot('sort_order');
+            },
+    
+            'packages.taskGroups.taskItems',
+    
+            'packages.includedItems' => function ($query) {
+                $query->orderByPivot('sort_order');
+            },
+    
+            'taskGroups.taskItems',
+            'includedItems',
+        ])->find($id);
+    
         if (!$service) {
             return response()->json([
                 'success' => false,
                 'message' => 'Service not found'
             ], 404);
         }
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Service details',

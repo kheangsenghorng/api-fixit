@@ -16,6 +16,10 @@ class ServiceResource extends JsonResource
             'category' => new CategoryResource($this->whenLoaded('category')),
             'type' => new TypeResource($this->whenLoaded('type')),
 
+            'service_packages' => ServicePackageResource::collection(
+                $this->whenLoaded('packages')
+            ),
+
             'title' => $this->title,
             'description' => $this->description,
             'status' => $this->status,
