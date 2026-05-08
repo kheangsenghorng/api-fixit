@@ -16,17 +16,9 @@ class UpdateServiceBookingRequest extends FormRequest
         return [
             'user_id' => ['sometimes', 'exists:users,id'],
             'service_id' => ['sometimes', 'exists:services,id'],
-
-            'street_number' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'house_number' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'address_id' => ['sometimes', 'exists:user_addresses,id'],
             'booking_date' => ['sometimes', 'date'],
             'booking_hours' => ['sometimes', 'nullable', 'string', 'max:255'],
-
-            'address' => ['sometimes', 'nullable', 'string'],
-            'latitude' => ['sometimes', 'nullable', 'numeric'],
-            'longitude' => ['sometimes', 'nullable', 'numeric'],
-            'map_url' => ['sometimes', 'nullable', 'string'],
-
             'quantity' => ['sometimes', 'integer', 'min:1'],
             'notes' => ['sometimes', 'nullable', 'string'],
 

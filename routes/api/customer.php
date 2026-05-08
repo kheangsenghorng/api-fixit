@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
+use App\Http\Controllers\Api\UserAddressController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
@@ -48,6 +49,13 @@ Route::middleware([
                 ->middleware('throttle:10,1')
                 ->name('store');
         });
+
+        Route::apiResource('user-addresses', UserAddressController::class);
+
+        Route::patch(
+            'user-addresses/{id}/set-default',
+            [UserAddressController::class, 'setDefault']
+        );
 
         Route::apiResource('payments', PaymentController::class);
 

@@ -32,6 +32,7 @@ class ServicePackage extends Model
     {
         return $this->belongsTo(Service::class);
     }
+
     public function taskGroups()
     {
         return $this->belongsToMany(
@@ -50,8 +51,13 @@ class ServicePackage extends Model
             'package_id',
             'included_item_id'
         )
-        ->withPivot('sort_order')
-        ->withTimestamps()
-        ->orderByPivot('sort_order');
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(ServiceBooking::class, 'package_id');
     }
 }
