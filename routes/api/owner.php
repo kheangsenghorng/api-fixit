@@ -186,11 +186,68 @@ Route::middleware([
                 ->whereNumber('servicePackage')
                 ->name('destroy');
         });
+        /*
+        |--------------------------------------------------------------------------
+        | task-groups
+        |--------------------------------------------------------------------------
+        */
 
+        Route::prefix('task-groups')->name('owner.task-groups.')->group(function () {
+            Route::get('/', [TaskGroupController::class, 'index'])
+                ->name('index');
+        
+            Route::get('/service/{serviceId}', [TaskGroupController::class, 'showByServiceId'])
+                ->whereNumber('serviceId')
+                ->name('by-service');
+        
+            Route::post('/', [TaskGroupController::class, 'store'])
+                ->name('store');
+        
+            Route::get('/{taskGroup}', [TaskGroupController::class, 'show'])
+                ->whereNumber('taskGroup')
+                ->name('show');
+        
+            Route::put('/{taskGroup}', [TaskGroupController::class, 'update'])
+                ->whereNumber('taskGroup')
+                ->name('update');
+        
+            Route::delete('/{taskGroup}', [TaskGroupController::class, 'destroy'])
+                ->whereNumber('taskGroup')
+                ->name('destroy');
+        });
+      
 
-        Route::apiResource('task-groups', TaskGroupController::class);
         Route::apiResource('task-items', TaskItemController::class);
-        Route::apiResource('included-items', IncludedItemController::class);
+         /*
+        |--------------------------------------------------------------------------
+        | included-items
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('included-items')->name('owner.included-items.')->group(function () {
+            Route::get('/', [IncludedItemController::class, 'index'])
+                ->name('index');
+        
+            Route::get('/service/{serviceId}', [IncludedItemController::class, 'showByServiceId'])
+                ->whereNumber('serviceId')
+                ->name('by-service');
+        
+            Route::post('/', [IncludedItemController::class, 'store'])
+                ->name('store');
+        
+            Route::get('/{includedItem}', [IncludedItemController::class, 'show'])
+                ->whereNumber('includedItem')
+                ->name('show');
+        
+            Route::put('/{includedItem}', [IncludedItemController::class, 'update'])
+                ->whereNumber('includedItem')
+                ->name('update');
+        
+            Route::delete('/{includedItem}', [IncludedItemController::class, 'destroy'])
+                ->whereNumber('includedItem')
+                ->name('destroy');
+        });
+
         Route::apiResource('package-included-items', PackageIncludedItemController::class);
         Route::apiResource('package-task-groups', PackageTaskGroupController::class);
         /*
