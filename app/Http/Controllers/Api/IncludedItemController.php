@@ -49,6 +49,19 @@ class IncludedItemController extends Controller
         return response()->json($includedItem);
     }
 
+    public function showByServiceId($serviceId)
+{
+    $includedItems = IncludedItem::where('service_id', $serviceId)
+        ->orderBy('id', 'desc')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Included items by service id',
+        'data' => $includedItems,
+    ]);
+}
+
 
     public function update(Request $request, IncludedItem $includedItem)
     {

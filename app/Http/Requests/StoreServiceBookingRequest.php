@@ -16,17 +16,10 @@ class StoreServiceBookingRequest extends FormRequest
         return [
             'user_id' => ['required', 'exists:users,id'],
             'service_id' => ['required', 'exists:services,id'],
-
-            'street_number' => ['nullable', 'string', 'max:255'],
-            'house_number' => ['nullable', 'string', 'max:255'],
+            'package_id' => ['nullable', 'exists:service_packages,id'],
+            'address_id' => ['required', 'exists:user_addresses,id'],
             'booking_date' => ['required', 'date'],
             'booking_hours' => ['nullable', 'string', 'max:255'],
-
-            'address' => ['nullable', 'string'],
-            'latitude' => ['nullable', 'numeric'],
-            'longitude' => ['nullable', 'numeric'],
-            'map_url' => ['nullable', 'string'],
-
             'quantity' => ['nullable', 'integer', 'min:1'],
             'notes' => ['nullable', 'string'],
 

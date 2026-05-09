@@ -16,40 +16,48 @@ class ServiceBookingResource extends JsonResource
     {
         return [
             'id' => $this->id,
+
             'user_id' => $this->user_id,
             'service_id' => $this->service_id,
+            'package_id' => $this->package_id,
+            'address_id' => $this->address_id,
 
-            'street_number' => $this->street_number,
-            'house_number' => $this->house_number,
             'booking_date' => $this->booking_date?->format('Y-m-d'),
             'booking_hours' => $this->booking_hours,
-
-            'address' => $this->address,
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
-            'map_url' => $this->map_url,
 
             'quantity' => $this->quantity,
             'notes' => $this->notes,
 
             'booking_status' => $this->booking_status,
             'customer_status' => $this->customer_status,
+
+            'provider_completed_at' => $this->provider_completed_at,
             'customer_completed_at' => $this->customer_completed_at,
             'auto_complete_at' => $this->auto_complete_at,
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 
-            'user' => $this->whenLoaded('user'),
+            'user' => new UserResource ($this->whenLoaded('user')),
+
+            'address' => new UserAddressResource(
+                $this->whenLoaded('address')
+            ),
+
+            'package' => new ServicePackageResource(
+                    $this->whenLoaded('package')
+                ),
 
             'service' => $this->whenLoaded('service', function () {
                 return [
                     'id' => $this->service->id,
                     'name' => $this->service->title,
+                    'title' => $this->service->title,
 
                     'images' => collect($this->service->images ?? [])
                         ->map(fn ($img) => [
                             'url' => $this->storageUrl($img),
+                            'path' => $img,
                         ])
                         ->values(),
 
@@ -76,8 +84,8 @@ class ServiceBookingResource extends JsonResource
                 ];
             }),
 
-            'payment' => $this->whenLoaded('payment', function () {
-                return $this->payment->map(function ($payment) {
+            'payments' => $this->whenLoaded('payments', function () {
+                return $this->payments->map(function ($payment) {
                     return [
                         'id' => $payment->id,
                         'user_id' => $payment->user_id,

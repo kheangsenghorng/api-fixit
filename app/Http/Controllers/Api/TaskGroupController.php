@@ -36,6 +36,19 @@ class TaskGroupController extends Controller
         );
     }
 
+    public function showByServiceId($serviceId)
+    {
+        $taskGroups = TaskGroup::with('taskItems')
+            ->where('service_id', $serviceId)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task groups by service',
+            'data' => $taskGroups,
+        ]);
+    }
+
     public function update(Request $request, TaskGroup $taskGroup)
     {
         $data = $request->validate([
