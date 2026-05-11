@@ -11,6 +11,7 @@ class UserAddress extends Model
         'label',
         'street_number',
         'house_number',
+        'city',
         'address',
         'latitude',
         'longitude',

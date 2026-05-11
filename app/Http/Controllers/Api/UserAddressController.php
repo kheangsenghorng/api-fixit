@@ -33,13 +33,13 @@ class UserAddressController extends Controller
             'label' => ['nullable', 'string', 'max:255'],
             'street_number' => ['nullable', 'string', 'max:255'],
             'house_number' => ['nullable', 'string', 'max:255'],
-            'address' => ['required', 'string'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
             'map_url' => ['nullable', 'string'],
             'is_default' => ['nullable', 'boolean'],
         ]);
-
         $data['user_id'] = $request->user()->id;
 
         if ($request->boolean('is_default')) {
@@ -99,6 +99,7 @@ class UserAddressController extends Controller
             'label' => ['nullable', 'string', 'max:255'],
             'street_number' => ['nullable', 'string', 'max:255'],
             'house_number' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
             'address' => ['sometimes', 'required', 'string'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],

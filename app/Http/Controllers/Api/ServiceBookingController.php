@@ -69,9 +69,12 @@ class ServiceBookingController extends Controller
     {
         $serviceBooking->load([
             'user',
+            'address',
+            'package.taskGroups',
+            'package.includedItems',
             'service.category',
             'service.type',
-            'payment',
+            'payments',
         ]);
 
         return response()->json([
@@ -85,18 +88,20 @@ class ServiceBookingController extends Controller
     {
         $bookings = ServiceBooking::with([
             'user',
+            'address',
+            'package',
             'service.category',
             'service.type',
-            'payment',
+            'payments',
         ])
             ->where('user_id', $userId)
             ->latest()
             ->get();
-
+    
         return response()->json([
             'success' => true,
             'message' => 'User service bookings retrieved successfully',
-            'data' => ServiceBookingResource::collection($bookings)
+            'data' => ServiceBookingResource::collection($bookings),
         ]);
     }
 

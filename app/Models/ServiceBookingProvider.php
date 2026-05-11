@@ -38,4 +38,8 @@ class ServiceBookingProvider extends Model
     {
         return $this->belongsTo(Owner::class, 'assigned_by');
     }
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'booking_id');
+    }
 }

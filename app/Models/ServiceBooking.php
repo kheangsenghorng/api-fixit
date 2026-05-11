@@ -57,10 +57,14 @@ class ServiceBooking extends Model
         return $this->hasMany(ServiceBookingProvider::class, 'service_booking_id');
     }
 
-    public function payments()
+    public function payment()
     {
-        return $this->hasMany(Payment::class, 'service_booking_id');
+        return $this->hasOne(Payment::class, 'service_booking_id');
     }
+    public function payments()
+{
+    return $this->hasMany(Payment::class, 'service_booking_id');
+}
 
     // public function jobImages()
     // {
