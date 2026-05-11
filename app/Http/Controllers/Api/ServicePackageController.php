@@ -88,7 +88,7 @@ class ServicePackageController extends Controller
 
     public function showByServiceId($serviceId)
     {
-        $servicePackages = ServicePackage::with('service','includedItems',)
+        $servicePackages = ServicePackage::with('service','includedItems','taskGroups.taskItems')
             ->where('service_id', $serviceId)
             ->latest()
             ->get();
@@ -99,6 +99,21 @@ class ServicePackageController extends Controller
             'data' => ServicePackageResource::collection($servicePackages),
         ]);
     }
+
+    public function getByServiceId($serviceId)
+    {
+        $servicePackages = ServicePackage::with('service','includedItems')
+            ->where('service_id', $serviceId)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Service packages by service id',
+            'data' => ServicePackageResource::collection($servicePackages),
+        ]);
+    }
+
 
     public function update(ServicePackageUpdateRequest $request, ServicePackage $servicePackage)
     {

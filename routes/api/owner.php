@@ -165,7 +165,11 @@ Route::middleware([
             Route::get('/service/{serviceId}', [ServicePackageController::class, 'showByServiceId'])
                 ->whereNumber('serviceId')
                 ->name('by-service');
-        
+
+            Route::get('/service/{serviceId}/included-items', [ServicePackageController::class, 'getByServiceId'])
+                ->whereNumber('serviceId')
+                ->name('included-items.by-service');
+
             Route::post('/', [ServicePackageController::class, 'store'])->name('store');
         
             Route::patch('/status/bulk', [ServicePackageController::class, 'updateManyStatus'])
