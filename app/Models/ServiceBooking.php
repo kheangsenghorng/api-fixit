@@ -66,6 +66,11 @@ class ServiceBooking extends Model
     return $this->hasMany(Payment::class, 'service_booking_id');
 }
 
+public function walletTransactions()
+{
+    return $this->hasMany(WalletTransaction::class, 'service_booking_id');
+}
+
     // public function jobImages()
     // {
     //     return $this->hasMany(ServiceJobImage::class, 'service_booking_id');

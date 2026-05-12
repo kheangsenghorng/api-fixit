@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
 use App\Http\Controllers\Api\UserAddressController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\WalletTransactionController;
 use App\Http\Middleware\IsActive;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -92,4 +94,30 @@ Route::middleware([
             Route::put('/{review}', [ReviewController::class, 'update'])->name('update');
             Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('destroy');
         });  
+
+        Route::prefix('wallets')->group(function () {
+            Route::get('/', [WalletController::class, 'index']);
+            Route::post('/', [WalletController::class, 'store']);
+        
+            Route::get('/user/{userId}', [WalletController::class, 'showByUserId']);
+            Route::get('/{walletId}', [WalletController::class, 'show']);
+        
+            Route::put('/{walletId}', [WalletController::class, 'update']);
+            Route::post('/{walletId}/top-up', [WalletController::class, 'topUp']);
+        
+            Route::patch('/{walletId}/freeze', [WalletController::class, 'freeze']);
+            Route::patch('/{walletId}/activate', [WalletController::class, 'activate']);
+        
+            Route::delete('/{walletId}', [WalletController::class, 'destroy']);
+        });
+        Route::prefix('wallet-traxnsactions')->group(function () {
+            Route::get('/', [WalletTransactionController::class, 'index']);
+            Route::post('/', [WalletTransactionController::class, 'store']);
+        
+            Route::get('/user/{userId}', [WalletTransactionController::class, 'showByUserId']);
+            Route::get('/wallet/{walletId}', [WalletTransactionController::class, 'showByWalletId']);
+        
+            Route::get('/{id}', [WalletTransactionController::class, 'show']);
+            Route::delete('/{id}', [WalletTransactionController::class, 'destroy']);
+        });
     });

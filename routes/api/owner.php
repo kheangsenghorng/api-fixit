@@ -302,6 +302,11 @@ Route::middleware([
                 ->whereNumber('ownerId');    
             Route::get('/{service_booking}', [ServiceBookingController::class, 'show'])
                 ->whereNumber('service_booking');
+                
+            Route::post(
+                    '/service-bookings/{bookingId}/owner-cancel-refund',
+                    [ServiceBookingController::class, 'ownerCancelAndRefund']
+                );
 
             Route::match(['put', 'patch'], '/{service_booking}', [ServiceBookingController::class, 'update'])
                 ->whereNumber('service_booking');

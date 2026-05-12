@@ -10,7 +10,12 @@ use App\Http\Resources\ServiceBookingResource;
 use App\Models\Payment;
 use App\Models\Service;
 use App\Models\ServiceBooking;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use App\Models\ServicePackage;
 
 class ServiceBookingController extends Controller
 {
@@ -20,7 +25,7 @@ class ServiceBookingController extends Controller
             'user',
             'service.category',
             'service.type',
-            'payment'
+            'payments'
         ])
             ->latest()
             ->paginate(10);
@@ -70,7 +75,7 @@ class ServiceBookingController extends Controller
         $serviceBooking->load([
             'user',
             'address',
-            'package.taskGroups',
+            'package.taskGroups.taskItems',
             'package.includedItems',
             'service.category',
             'service.type',
@@ -136,7 +141,7 @@ public function showByOwnerId(int $ownerId): JsonResponse
         'user',
         'service.category',
         'service.type',
-        'payment',
+        'payments',
     ])
         ->whereHas('service', function ($query) use ($ownerId) {
             $query->where('owner_id', $ownerId);
@@ -264,5 +269,106 @@ public function bookingStatsByOwnerId(int $ownerId): JsonResponse
             'monthly_revenue' => $monthlyRevenue,
         ],
     ]);
+}
+public function ownerCancelAndRefund(Request $request, int $bookingId): JsonResponse
+{
+    $request->validate([
+        'reason' => ['nullable', 'string', 'max:1000'],
+    ]);
+
+    try {
+        $booking = DB::transaction(function () use ($bookingId, $request) {
+            $booking = ServiceBooking::with(['payments'])
+                ->lockForUpdate()
+                ->findOrFail($bookingId);
+
+            if ($booking->booking_status === 'cancelled') {
+                abort(422, 'This booking is already cancelled.');
+            }
+
+            $payment = $booking->payments()
+                ->whereIn('status', ['paid', 'pending'])
+                ->latest()
+                ->first();
+
+            if (!$payment) {
+                abort(422, 'No refundable payment found for this booking.');
+            }
+
+            $refundAmount = (float) $payment->final_amount;
+
+            if ($refundAmount <= 0) {
+                abort(422, 'Refund amount must be greater than zero.');
+            }
+
+            $wallet = Wallet::where('user_id', $booking->user_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$wallet) {
+                $wallet = Wallet::create([
+                    'user_id' => $booking->user_id,
+                    'balance' => 0,
+                    'currency' => 'USD',
+                    'status' => 'active',
+                    'is_active' => true,
+                ]);
+            }
+
+            if ($wallet->status !== 'active' || !$wallet->is_active) {
+                abort(422, 'User wallet is not active.');
+            }
+
+            $balanceBefore = (float) $wallet->balance;
+            $balanceAfter = $balanceBefore + $refundAmount;
+
+            $wallet->update([
+                'balance' => $balanceAfter,
+            ]);
+
+            WalletTransaction::create([
+                'wallet_id' => $wallet->wallet_id,
+                'user_id' => $booking->user_id,
+                'payment_id' => $payment->id,
+                'service_booking_id' => $booking->id,
+                'type' => 'credit',
+                'amount' => $refundAmount,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $balanceAfter,
+                'description' => $request->reason
+                    ? 'Refund: ' . $request->reason
+                    : 'Refund for cancelled service booking #' . $booking->id,
+            ]);
+
+            $payment->update([
+                'status' => 'refunded',
+            ]);
+
+            $booking->update([
+                'booking_status' => 'cancelled',
+                'customer_status' => 'refunded',
+            ]);
+
+            return $booking->fresh([
+                'user',
+                'address',
+                'package',
+                'service',
+                'payments',
+                'walletTransactions',
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking cancelled and refund added to user wallet successfully',
+            'data' => $booking,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 422);
+    }
 }
 }
