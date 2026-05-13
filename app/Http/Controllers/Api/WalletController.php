@@ -130,7 +130,7 @@ class WalletController extends Controller
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'method' => ['required', 'in:aba,bakong,cash'],
+            'method' => ['nullable', 'in:wallet,aba,bakong,cash,khqr'],
             'transaction_ref' => ['nullable', 'string', 'max:255'],
             'external_transaction_id' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

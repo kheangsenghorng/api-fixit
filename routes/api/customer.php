@@ -110,7 +110,7 @@ Route::middleware([
         
             Route::delete('/{walletId}', [WalletController::class, 'destroy']);
         });
-        Route::prefix('wallet-traxnsactions')->group(function () {
+        Route::prefix('wallet-transactions')->group(function () {
             Route::get('/', [WalletTransactionController::class, 'index']);
             Route::post('/', [WalletTransactionController::class, 'store']);
         

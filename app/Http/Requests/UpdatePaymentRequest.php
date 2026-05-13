@@ -34,7 +34,7 @@ class UpdatePaymentRequest extends FormRequest
             'final_amount' => ['sometimes', 'numeric', 'min:0'],
             'method' => [
                 'sometimes',
-                Rule::in(['bank_transfer', 'card', 'cash', 'bakong', 'khqr']),
+                Rule::in(['bank_transfer', 'card', 'cash', 'bakong', 'khqr', 'wallet']),
             ],
             'status' => [
                 'sometimes',

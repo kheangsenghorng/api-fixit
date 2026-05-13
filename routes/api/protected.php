@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\OwnerController;
 use App\Http\Controllers\Api\OwnerDocumentController;
 use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\Payway\PayWayTransactionController;
 use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\ServiceBookingProviderController;
@@ -77,6 +78,13 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/khqr/check-hash', [PaymentController::class, 'checkTransactionByHash'])->name('khqr.check-hash');
         Route::post('/khqr/check-account', [PaymentController::class, 'checkBakongAccount'])->name('khqr.check-account');
         Route::post('/khqr/check-external-ref', [PaymentController::class, 'checkTransactionByExternalRef'])->name('khqr.check-external-ref');
+    });
+
+    Route::prefix('payway')->group(function () {
+        Route::post('/purchase', [PayWayTransactionController::class, 'purchase']);
+        Route::post('/check-transaction', [PayWayTransactionController::class, 'checkTransaction']);
+        Route::post('/close-transaction', [PayWayTransactionController::class, 'closeTransaction']);
+        Route::post('/link-account-qr', [PayWayTransactionController::class, 'linkAccountQr']);
     });
 
     Route::post('/generate-payment', [PaymentController::class, 'generatePayment'])
