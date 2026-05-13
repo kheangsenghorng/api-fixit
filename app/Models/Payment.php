@@ -59,4 +59,9 @@ class Payment extends Model
             'id'
         );
     }
+
+     public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class, 'payment_id');
+    }
 }
