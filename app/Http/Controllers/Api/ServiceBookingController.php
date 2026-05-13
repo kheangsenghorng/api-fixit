@@ -23,6 +23,7 @@ class ServiceBookingController extends Controller
     {
         $bookings = ServiceBooking::with([
             'user',
+            'address',
             'service.category',
             'service.type',
             'payments'
@@ -171,7 +172,7 @@ public function showHistoryByOwnerId(int $ownerId): JsonResponse
         'user',
         'service.category',
         'service.type',
-        'payment',
+        'payments',
     ])
         ->whereHas('service', function ($query) use ($ownerId) {
             $query->where('owner_id', $ownerId);
@@ -234,13 +235,13 @@ public function bookingStatsByOwnerId(int $ownerId): JsonResponse
                 ->count(),
 
             'paid_bookings' => (clone $baseQuery)
-                ->whereHas('payment', function ($query) {
+                ->whereHas('payments', function ($query) {
                     $query->where('status', 'paid');
                 })
                 ->count(),
 
             'pending_payments' => (clone $baseQuery)
-                ->whereHas('payment', function ($query) {
+                ->whereHas('payments', function ($query) {
                     $query->where('status', 'pending');
                 })
                 ->count(),
@@ -253,8 +254,8 @@ public function bookingStatsByOwnerId(int $ownerId): JsonResponse
 
             'unpaid_bookings' => (clone $baseQuery)
                 ->where(function ($query) {
-                    $query->whereDoesntHave('payment')
-                        ->orWhereHas('payment', function ($paymentQuery) {
+                    $query->whereDoesntHave('payments')
+                        ->orWhereHas('payments', function ($paymentQuery) {
                             $paymentQuery->where('status', '!=', 'paid');
                         });
                 })

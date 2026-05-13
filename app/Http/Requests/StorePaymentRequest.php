@@ -23,7 +23,7 @@ class StorePaymentRequest extends FormRequest
             'original_amount' => ['required', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'final_amount' => ['required', 'numeric', 'min:0'],
-            'method' => ['required', Rule::in(['bank_transfer', 'card', 'cash', 'bakong', 'khqr'])],
+            'method' => ['required', 'in:bank_transfer,card,cash,bakong,khqr,wallet'],
             'status' => ['nullable', Rule::in(['pending', 'paid', 'failed', 'refunded'])],
         ];
     }

@@ -90,7 +90,7 @@ class WalletTransactionController extends Controller
             'type' => ['required', 'in:credit,debit'],
 
             // payment/top-up method
-            'method' => ['nullable', 'in:wallet,aba,bakong,cash'],
+           'method' => ['nullable', 'in:wallet,aba,bakong,cash,khqr'],
 
             'transaction_ref' => ['nullable', 'string', 'max:255'],
             'external_transaction_id' => ['nullable', 'string', 'max:255'],
