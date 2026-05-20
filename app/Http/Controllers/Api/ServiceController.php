@@ -16,11 +16,12 @@ class ServiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Service::with(['owner', 'category', 'type']);
-
+        $query = Service::with(['owner', 'category', 'type', 'packages'])
+            ->withCount('packages'); // ✅ count service packages
+    
         if ($request->filled('search')) {
             $search = trim($request->search);
-
+    
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
@@ -32,34 +33,34 @@ class ServiceController extends Controller
                     });
             });
         }
-
+    
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
-
+    
         if ($request->filled('type_id')) {
             $query->where('type_id', $request->type_id);
         }
-
+    
         if ($request->filled('owner_id')) {
             $query->where('owner_id', $request->owner_id);
         }
-
+    
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
+    
         if ($request->filled('rating')) {
             $query->whereHas('reviews', function ($q) use ($request) {
                 $q->where('rating', '>=', $request->rating);
             });
         }
-
+    
         if ($request->filled('lat') && $request->filled('lng') && $request->filled('radius')) {
             $lat = $request->lat;
             $lng = $request->lng;
             $radius = $request->radius;
-
+    
             $query->selectRaw("
                 services.*,
                 (
@@ -75,9 +76,9 @@ class ServiceController extends Controller
             ->having("distance", "<=", $radius)
             ->orderBy("distance");
         }
-
+    
         $services = $query->latest()->paginate(10);
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Services list',
@@ -146,7 +147,8 @@ class ServiceController extends Controller
 
         $owner = Owner::where('user_id', Auth::id())->firstOrFail();
 
-        $query = Service::with(['category', 'type', 'owner'])
+        $query = Service::with(['category', 'type', 'owner','packages'])
+            ->withCount('packages')// ✅ count service packages
             ->where('owner_id', $owner->id);
 
         if ($request->filled('search')) {
@@ -187,6 +189,25 @@ class ServiceController extends Controller
                 'last_page' => $services->lastPage(),
                 'total' => $services->total(),
             ]
+        ]);
+    }
+
+    public function fineByowner($ownerId)
+    {
+        $services = Service::with(['category', 'type', 'owner','packages'])
+            ->where('owner_id', $ownerId)
+            ->latest()
+            ->paginate(10);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Owner services',
+            'data' => ServiceResource::collection($services->items()),
+            'meta' => [
+                'current_page' => $services->currentPage(),
+                'last_page' => $services->lastPage(),
+                'total' => $services->total(),
+            ],
         ]);
     }
 

@@ -101,6 +101,10 @@ class ServiceBookingResource extends JsonResource
                     ];
                 })->values();
             }),
+            'wallet_transactions' => WalletTransactionResource::collection(
+                $this->whenLoaded('walletTransactions')
+            ),
+        
         ];
     }
 }

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Services\OtpRouterService;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @OA\Tag(
@@ -43,20 +45,37 @@ class AuthController extends Controller
     
         $validated = $request->validate([
             'name' => ['required', 'string'],
-            'email' => ['nullable', 'email', 'unique:users', 'required_without:phone'],
-            'phone' => ['nullable', 'unique:users', 'required_without:email'],
+            'email' => ['nullable', 'email', 'unique:users,email', 'required_without:phone'],
+            'phone' => ['nullable', 'unique:users,phone', 'required_without:email'],
             'password' => ['required', 'min:6', 'confirmed'],
-            'role' => ['in:customer,provider,owner'],
+            'role' => ['nullable', 'in:customer,provider,owner'],
         ]);
     
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'] ?? null,
-            'phone' => $validated['phone'] ?? null,
-            'role' => $validated['role'] ?? 'customer',
-            'is_active' => false,
-            'password' => Hash::make($validated['password']),
-        ]);
+        $user = DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'role' => $validated['role'] ?? 'customer',
+                'is_active' => false,
+                'password' => Hash::make($validated['password']),
+            ]);
+    
+            Wallet::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                ],
+                [
+                    'balance' => 0,
+                    'currency' => 'USD',
+                    'status' => 'active',
+                    'phone' => $user->phone,
+                    'is_active' => true,
+                ]
+            );
+    
+            return $user;
+        });
     
         $type = $user->email ? 'email' : 'phone';
         $value = $user->email ?? $user->phone;

@@ -81,6 +81,9 @@ class ServiceBookingController extends Controller
             'service.category',
             'service.type',
             'payments',
+            'walletTransactions.wallet',
+            'walletTransactions.user',
+            'walletTransactions.payment',
         ]);
 
         return response()->json([
@@ -271,105 +274,209 @@ public function bookingStatsByOwnerId(int $ownerId): JsonResponse
         ],
     ]);
 }
-public function ownerCancelAndRefund(Request $request, int $bookingId): JsonResponse
-{
-    $request->validate([
-        'reason' => ['nullable', 'string', 'max:1000'],
-    ]);
+    public function ownerCancelAndRefund(Request $request, int $bookingId): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
 
-    try {
-        $booking = DB::transaction(function () use ($bookingId, $request) {
-            $booking = ServiceBooking::with(['payments'])
-                ->lockForUpdate()
-                ->findOrFail($bookingId);
+        try {
+            $booking = DB::transaction(function () use ($bookingId, $data) {
+                $booking = ServiceBooking::with([
+                        'payments.split.ownerPayout',
+                        'user',
+                        'address',
+                        'package',
+                        'service',
+                    ])
+                    ->lockForUpdate()
+                    ->findOrFail($bookingId);
 
-            if ($booking->booking_status === 'cancelled') {
-                abort(422, 'This booking is already cancelled.');
-            }
+                if ($booking->booking_status === 'cancelled') {
+                    abort(422, 'This booking is already cancelled.');
+                }
 
-            $payment = $booking->payments()
-                ->whereIn('status', ['paid', 'pending'])
-                ->latest()
-                ->first();
+                if ($booking->booking_status === 'completed') {
+                    abort(422, 'Completed booking cannot be cancelled.');
+                }
 
-            if (!$payment) {
-                abort(422, 'No refundable payment found for this booking.');
-            }
+                $payment = $booking->payments()
+                    ->whereIn('status', ['paid', 'pending'])
+                    ->latest()
+                    ->lockForUpdate()
+                    ->first();
 
-            $refundAmount = (float) $payment->final_amount;
+                if (!$payment) {
+                    abort(422, 'No refundable payment found for this booking.');
+                }
 
-            if ($refundAmount <= 0) {
-                abort(422, 'Refund amount must be greater than zero.');
-            }
+                $payment->load('split.ownerPayout');
 
-            $wallet = Wallet::where('user_id', $booking->user_id)
-                ->lockForUpdate()
-                ->first();
+                $split = $payment->split;
+                $ownerPayout = $split?->ownerPayout;
 
-            if (!$wallet) {
-                $wallet = Wallet::create([
-                    'user_id' => $booking->user_id,
-                    'balance' => 0,
-                    'currency' => 'USD',
-                    'status' => 'active',
-                    'is_active' => true,
+                if ($ownerPayout && $ownerPayout->status === 'paid') {
+                    abort(422, 'This booking cannot be refunded because owner payout is already paid.');
+                }
+
+                $refundAmount = (float) $payment->final_amount;
+
+                if ($refundAmount <= 0) {
+                    abort(422, 'Refund amount must be greater than zero.');
+                }
+
+                $wallet = Wallet::where('user_id', $booking->user_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$wallet) {
+                    $wallet = Wallet::create([
+                        'user_id' => $booking->user_id,
+                        'balance' => 0,
+                        'currency' => 'USD',
+                        'status' => 'active',
+                        'is_active' => true,
+                    ]);
+                }
+
+                if ($wallet->status !== 'active' || !$wallet->is_active) {
+                    abort(422, 'User wallet is not active.');
+                }
+
+                $balanceBefore = (float) $wallet->balance;
+                $balanceAfter = $balanceBefore + $refundAmount;
+
+                $wallet->update([
+                    'balance' => $balanceAfter,
                 ]);
-            }
 
-            if ($wallet->status !== 'active' || !$wallet->is_active) {
-                abort(422, 'User wallet is not active.');
-            }
+                WalletTransaction::create([
+                    'wallet_id' => $wallet->wallet_id,
+                    'user_id' => $booking->user_id,
+                    'payment_id' => $payment->id,
+                    'service_booking_id' => $booking->id,
+                    'type' => 'credit',
+                    'method' => 'wallet',
+                    'transaction_ref' => 'REFUND-' . $booking->id . '-' . now()->format('YmdHis'),
+                    'amount' => $refundAmount,
+                    'balance_before' => $balanceBefore,
+                    'balance_after' => $balanceAfter,
+                    'description' => !empty($data['reason'])
+                        ? 'Refund: ' . $data['reason']
+                        : 'Refund for cancelled service booking #' . $booking->id,
+                ]);
 
-            $balanceBefore = (float) $wallet->balance;
-            $balanceAfter = $balanceBefore + $refundAmount;
+                $payment->update([
+                    'status' => 'refunded',
+                ]);
 
-            $wallet->update([
-                'balance' => $balanceAfter,
+                if ($ownerPayout && $ownerPayout->status === 'pending') {
+                    if ($ownerPayout && $ownerPayout->status === 'pending') {
+                        $ownerPayout->update([
+                            'status' => 'cancelled',
+                            'transaction_reference' => 'CANCELLED-BOOKING-' . $booking->id,
+                            'paid_at' => null,
+                        ]);
+                    }
+                }
+
+                $booking->update([
+                    'booking_status' => 'cancelled',
+                    'customer_status' => 'refunded',
+                ]);
+
+                return $booking->fresh([
+                    'user',
+                    'address',
+                    'package',
+                    'service',
+                    'payments.split.ownerPayout',
+                    'walletTransactions',
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking cancelled and refund added to customer wallet successfully.',
+                'data' => $booking,
             ]);
-
-            WalletTransaction::create([
-                'wallet_id' => $wallet->wallet_id,
-                'user_id' => $booking->user_id,
-                'payment_id' => $payment->id,
-                'service_booking_id' => $booking->id,
-                'type' => 'credit',
-                'amount' => $refundAmount,
-                'balance_before' => $balanceBefore,
-                'balance_after' => $balanceAfter,
-                'description' => $request->reason
-                    ? 'Refund: ' . $request->reason
-                    : 'Refund for cancelled service booking #' . $booking->id,
-            ]);
-
-            $payment->update([
-                'status' => 'refunded',
-            ]);
-
-            $booking->update([
-                'booking_status' => 'cancelled',
-                'customer_status' => 'refunded',
-            ]);
-
-            return $booking->fresh([
-                'user',
-                'address',
-                'package',
-                'service',
-                'payments',
-                'walletTransactions',
-            ]);
-        });
-
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+    
+    public function refundedCancelledBookings(Request $request): JsonResponse
+    {
+        $ownerId = $request->query('owner_id');
+    
+        $bookings = ServiceBooking::with([
+            'user',
+            'address',
+            'package',
+            'service.category',
+            'service.type',
+            'payments.split.ownerPayout',
+            'walletTransactions',
+        ])
+            ->where('booking_status', 'cancelled')
+            ->where('customer_status', 'refunded')
+            ->when($ownerId, function ($query) use ($ownerId) {
+                $query->whereHas('payments', function ($paymentQuery) use ($ownerId) {
+                    $paymentQuery->where('owner_id', $ownerId);
+                });
+            })
+            ->latest()
+            ->paginate(10);
+    
         return response()->json([
             'success' => true,
-            'message' => 'Booking cancelled and refund added to user wallet successfully',
-            'data' => $booking,
+            'message' => 'Cancelled and refunded bookings retrieved successfully.',
+            'data' => ServiceBookingResource::collection($bookings),
+            'pagination' => [
+                'current_page' => $bookings->currentPage(),
+                'last_page' => $bookings->lastPage(),
+                'per_page' => $bookings->perPage(),
+                'total' => $bookings->total(),
+                'from' => $bookings->firstItem(),
+                'to' => $bookings->lastItem(),
+            ],
         ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 422);
     }
+
+    public function refundedCancelledBookingsByOwnerId(int $ownerId): JsonResponse
+{
+    $bookings = ServiceBooking::with([
+        'user',
+        'address',
+        'package',
+        'service.category',
+        'service.type',
+        'payments.split.ownerPayout',
+        'walletTransactions',
+    ])
+        ->whereHas('service', function ($query) use ($ownerId) {
+            $query->where('owner_id', $ownerId);
+        })
+        ->where('booking_status', 'cancelled')
+        ->where('customer_status', 'refunded')
+        ->latest()
+        ->paginate(10);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Owner cancelled and refunded bookings retrieved successfully.',
+        'data' => ServiceBookingResource::collection($bookings),
+        'pagination' => [
+            'current_page' => $bookings->currentPage(),
+            'last_page' => $bookings->lastPage(),
+            'per_page' => $bookings->perPage(),
+            'total' => $bookings->total(),
+            'from' => $bookings->firstItem(),
+            'to' => $bookings->lastItem(),
+        ],
+    ]);
 }
 }
