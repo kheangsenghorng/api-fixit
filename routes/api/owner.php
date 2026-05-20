@@ -302,11 +302,12 @@ Route::middleware([
                 ->whereNumber('ownerId');    
             Route::get('/{service_booking}', [ServiceBookingController::class, 'show'])
                 ->whereNumber('service_booking');
-                
-            Route::post(
-                    '/service-bookings/{bookingId}/owner-cancel-refund',
-                    [ServiceBookingController::class, 'ownerCancelAndRefund']
-                );
+            Route::get('/{ownerId}/refunded-cancelled', [
+                ServiceBookingController::class,
+                'refundedCancelledBookingsByOwnerId'
+            ])->whereNumber('ownerId');
+
+            Route::post('/{bookingId}/owner-cancel-refund',[ServiceBookingController::class, 'ownerCancelAndRefund']);   
 
             Route::match(['put', 'patch'], '/{service_booking}', [ServiceBookingController::class, 'update'])
                 ->whereNumber('service_booking');
@@ -384,11 +385,22 @@ Route::middleware([
     */
 
     Route::prefix('payouts')->group(function () {
-    Route::get('/', [OwnerPayoutController::class, 'index']);
-
-    Route::get('/stats', [OwnerPayoutController::class, 'stats']);
-
-    Route::get('/{id}', [OwnerPayoutController::class, 'show'])
-        ->whereNumber('id');
+        // Logged-in owner monthly stats
+        Route::get('/stats', [OwnerPayoutController::class, 'stats']);
+    
+        // Logged-in owner monthly payouts
+        Route::get('/', [OwnerPayoutController::class, 'index']);
+    
+        // Admin/view by owner id
+        Route::get('/{ownerId}/stats', [OwnerPayoutController::class, 'statsByOwnerId'])
+            ->whereNumber('ownerId');
+    
+        Route::get('/{ownerId}', [OwnerPayoutController::class, 'showByOwnerId'])
+            ->whereNumber('ownerId');
+    
+        // Show one payout
+        Route::get('/{id}', [OwnerPayoutController::class, 'show'])
+            ->whereNumber('id');
     });
+
  });

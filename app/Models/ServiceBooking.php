@@ -32,6 +32,8 @@ class ServiceBooking extends Model
         'auto_complete_at' => 'datetime',
     ];
 
+
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -62,14 +64,20 @@ class ServiceBooking extends Model
         return $this->hasOne(Payment::class, 'service_booking_id');
     }
     public function payments()
-{
-    return $this->hasMany(Payment::class, 'service_booking_id');
-}
+    {
+        return $this->hasMany(Payment::class, 'service_booking_id');
+    }
 
-public function walletTransactions()
-{
-    return $this->hasMany(WalletTransaction::class, 'service_booking_id');
-}
+    public function walletTransactions()
+    {
+        return $this->hasMany(
+            WalletTransaction::class,
+            'service_booking_id',
+            'id'
+        );
+    }
+
+
 
     // public function jobImages()
     // {

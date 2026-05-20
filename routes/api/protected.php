@@ -56,6 +56,8 @@ Route::middleware(['auth:api'])->group(function () {
 
         Route::get('/{service_booking}', [ServiceBookingController::class, 'show'])
             ->whereNumber('service_booking');
+            
+        Route::get('/refunded-cancelled', [ServiceBookingController::class,'refundedCancelledBookings']);
 
         Route::put('/{service_booking}', [ServiceBookingController::class, 'update'])
             ->whereNumber('service_booking');

@@ -14,15 +14,15 @@ use App\Http\Controllers\Auth\OtpEmailController;
 use Illuminate\Support\Facades\Route;
 
 // 🔐 Auth
-Route::post('/register', [AuthController::class, 'register'])
-    ->middleware('throttle:5,1');
+Route::post('/register', [AuthController::class, 'register']);
+   
 
-Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:10,1');
+Route::post('/login', [AuthController::class, 'login']);
+   
 
 // 📲 OTP (phone)
 Route::post('/otp/send', [OtpController::class, 'send'])
-    ->middleware('throttle:3,1');
+    ->middleware('throttle:10,1');
 
 Route::post('/otp/verify', [OtpController::class, 'verify'])
     ->middleware('throttle:5,1');

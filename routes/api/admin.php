@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AnalyticsController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\OwnerController;
@@ -153,6 +154,7 @@ Route::middleware([
     Route::prefix('services')->group(function () {
         Route::get('/', [ServiceController::class, 'index']);
         Route::get('/active', [ServiceController::class, 'activeServices']);
+        Route::get('/owner/{ownerId}', [ServiceController::class, 'fineByowner']);
         Route::get('/stats', [ServiceController::class, 'stats']);
 
         Route::post('/', [ServiceController::class, 'store'])
@@ -234,5 +236,7 @@ Route::middleware([
 
        
     });
+
+    Route::get('/analytics/overview', [AnalyticsController::class ,'overview']);
 
 });
