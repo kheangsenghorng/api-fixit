@@ -14,6 +14,7 @@ return [
         'http://localhost:3000',
         'http://localhost:5173',
         'https://dashboard-fixit.vercel.app',
+        'https://www.servicefixit.me',
     ],
 
     'allowed_origins_patterns' => [],
