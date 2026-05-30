@@ -6,44 +6,33 @@ use App\Http\Controllers\Controller;
 use App\Models\Owner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class TelegramWebhookController extends Controller
 {
     public function webhook(Request $request)
     {
+        Log::info('Telegram webhook received', $request->all());
+
         $update = $request->all();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Auto detect when bot is added to group
-        |--------------------------------------------------------------------------
-        */
         if (isset($update['my_chat_member'])) {
             $chat = $update['my_chat_member']['chat'] ?? null;
             $newStatus = $update['my_chat_member']['new_chat_member']['status'] ?? null;
 
-            if (!$chat) {
-                return response()->json(['ok' => true]);
-            }
-
-            if (in_array($newStatus, ['member', 'administrator'])) {
+            if ($chat && in_array($newStatus, ['member', 'administrator'])) {
                 return response()->json([
                     'ok' => true,
                     'message' => 'Bot added to group',
-                    'telegram_group_id' => $chat['id'],
+                    'telegram_group_id' => (string) $chat['id'],
                     'telegram_group_name' => $chat['title'] ?? null,
-                    'note' => 'Now send /connect YOUR_CODE to link this group with company.',
+                    'note' => 'Send /connect YOUR_CODE to link this group with company.',
                 ]);
             }
 
             return response()->json(['ok' => true]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Connect group with company using /connect CODE
-        |--------------------------------------------------------------------------
-        */
         $message = $update['message'] ?? null;
 
         if (!$message) {
@@ -65,24 +54,16 @@ class TelegramWebhookController extends Controller
             return response()->json(['ok' => true]);
         }
 
-        if (str_starts_with($text, '/connect')) {
-            $parts = preg_split('/\s+/', $text);
-            $connectCode = $parts[1] ?? null;
-
-            if (!$connectCode) {
-                $this->sendMessage($chatId, "❌ Connect code missing.\nExample: /connect FIXIT-RHOC351V");
-
-                return response()->json([
-                    'ok' => false,
-                    'message' => 'Connect code missing',
-                ]);
-            }
+        // Supports:
+        // /connect FIXIT-XXXX
+        // /connect@FixitServiceME_bot FIXIT-XXXX
+        if (preg_match('/^\/connect(?:@\w+)?\s+(.+)$/', $text, $matches)) {
+            $connectCode = trim($matches[1]);
 
             $owner = Owner::where('telegram_connect_code', $connectCode)->first();
 
             if (!$owner) {
                 $this->sendMessage($chatId, "❌ Invalid connect code.");
-
                 return response()->json([
                     'ok' => false,
                     'message' => 'Invalid connect code',
@@ -113,7 +94,14 @@ class TelegramWebhookController extends Controller
 
     private function sendMessage($chatId, $text): void
     {
-        Http::post('https://api.telegram.org/bot' . env('TELEGRAM_BOT_TOKEN') . '/sendMessage', [
+        $token = config('services.telegram.bot_token');
+
+        if (!$token) {
+            Log::error('Telegram bot token missing.');
+            return;
+        }
+
+        Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
             'chat_id' => $chatId,
             'text' => $text,
         ]);
