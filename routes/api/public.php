@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\GeocodeController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\ServicePackageController;
+use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Auth\OtpEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -76,3 +77,5 @@ Route::get('/owner-documents/{ownerDocument}/download', [AdminOwnerDocumentContr
     ->middleware(['signed', 'throttle:20,1'])
     ->whereNumber('ownerDocument')
     ->name('admin.owner-documents.download');
+
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'webhook']);

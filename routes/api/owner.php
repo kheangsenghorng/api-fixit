@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\ServicePackageController;
 use App\Http\Controllers\Api\TaskGroupController;
 use App\Http\Controllers\Api\TaskItemController;
+use App\Http\Controllers\Api\TelegramController;
 use App\Http\Controllers\Api\TypeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\CheckOwnerDocument;
@@ -403,4 +404,9 @@ Route::middleware([
             ->whereNumber('id');
     });
 
+    Route::prefix('telegram')->group(function () {
+        Route::get('/group-link', [TelegramController::class, 'groupLink']);
+        Route::post('/sync-group-id', [TelegramController::class, 'syncGroupId']);
+        Route::get('/status', [TelegramController::class, 'status']);
+    });
  });
