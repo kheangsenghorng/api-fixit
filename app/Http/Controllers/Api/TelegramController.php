@@ -162,4 +162,25 @@ class TelegramController extends Controller
             ],
         ]);
     }
+
+    public function status()
+    {
+        $owner = Owner::where('user_id', auth()->id())->first();
+
+        if (!$owner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Owner profile not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'is_added' => (bool) $owner->telegram_connected,
+                'telegram_group_id' => $owner->telegram_group_id,
+                'telegram_group_name' => $owner->telegram_group_name,
+            ],
+        ]);
+    }
 }

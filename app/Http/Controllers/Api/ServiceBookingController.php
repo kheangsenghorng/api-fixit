@@ -16,9 +16,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\ServicePackage;
+use App\Services\TelegramNotificationService;
 
 class ServiceBookingController extends Controller
 {
+    protected TelegramNotificationService $telegram;
+
+    public function __construct(
+        TelegramNotificationService $telegram
+    ) {
+        $this->telegram = $telegram;
+    }
     public function index()
     {
         $bookings = ServiceBooking::with([
@@ -53,7 +61,21 @@ class ServiceBookingController extends Controller
             'auto_complete_at' => $request->auto_complete_at,
         ]);
 
-        $booking->load(['user', 'service.category', 'service.type']);
+        $booking->load([
+            'user',
+            'service.owner',
+            'package',
+            'service.category',
+            'service.type',
+        ]);
+        try {
+            $this->telegram->sendBookingToCompany($booking);
+        } catch (\Exception $e) {
+            \Log::error('Telegram notification failed', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         // broadcast(new OwnerNotificationEvent(
         //     ownerId: $service->owner_id,
