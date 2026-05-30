@@ -12,9 +12,7 @@ class TelegramController extends Controller
 {
     public function groupLink(Request $request)
     {
-        $user = auth()->user();
-
-        $owner = Owner::where('user_id', $user->id)->first();
+        $owner = Owner::where('user_id', auth()->id())->first();
 
         if (!$owner) {
             return response()->json([
@@ -29,29 +27,70 @@ class TelegramController extends Controller
             ]);
         }
 
-        $botUsername = env('TELEGRAM_BOT_USERNAME');
+        $botUsername = config('services.telegram.bot_username');
 
-        $link = 'https://t.me/' . $botUsername
+        if (!$botUsername) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Telegram bot username missing.',
+            ], 500);
+        }
+
+        $telegramLink = 'https://t.me/' . $botUsername
             . '?startgroup=' . $owner->telegram_connect_code;
 
         return response()->json([
             'success' => true,
-            'message' => 'Telegram group link generated successfully',
+            'message' => 'Telegram group link generated successfully.',
             'data' => [
-                'telegram_link' => $link,
+                'telegram_link' => $telegramLink,
                 'connect_code' => $owner->telegram_connect_code,
-                'telegram_connected' => $owner->telegram_connected,
+                'telegram_connected' => (bool) $owner->telegram_connected,
                 'telegram_group_id' => $owner->telegram_group_id,
                 'telegram_group_name' => $owner->telegram_group_name,
             ],
         ]);
     }
 
+    public function setWebhook()
+    {
+        $token = config('services.telegram.bot_token');
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Telegram bot token missing.',
+            ], 500);
+        }
+
+        $webhookUrl = rtrim(config('app.url'), '/') . '/api/telegram/webhook';
+
+        $response = Http::get("https://api.telegram.org/bot{$token}/setWebhook", [
+            'url' => $webhookUrl,
+        ]);
+
+        return response()->json($response->json());
+    }
+
+    public function webhookInfo()
+    {
+        $token = config('services.telegram.bot_token');
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Telegram bot token missing.',
+            ], 500);
+        }
+
+        $response = Http::get("https://api.telegram.org/bot{$token}/getWebhookInfo");
+
+        return response()->json($response->json());
+    }
+
     public function syncGroupId(Request $request)
     {
-        $user = auth()->user();
-
-        $owner = Owner::where('user_id', $user->id)->first();
+        $owner = Owner::where('user_id', auth()->id())->first();
 
         if (!$owner) {
             return response()->json([
@@ -60,7 +99,14 @@ class TelegramController extends Controller
             ], 404);
         }
 
-        $token = env('TELEGRAM_BOT_TOKEN');
+        $token = config('services.telegram.bot_token');
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Telegram bot token missing.',
+            ], 500);
+        }
 
         $response = Http::get("https://api.telegram.org/bot{$token}/getUpdates");
 
@@ -88,7 +134,6 @@ class TelegramController extends Controller
                 $latestGroup = [
                     'id' => (string) $chat['id'],
                     'title' => $chat['title'] ?? null,
-                    'type' => $chat['type'],
                 ];
                 break;
             }
@@ -113,7 +158,7 @@ class TelegramController extends Controller
             'data' => [
                 'telegram_group_id' => $owner->telegram_group_id,
                 'telegram_group_name' => $owner->telegram_group_name,
-                'telegram_connected' => $owner->telegram_connected,
+                'telegram_connected' => (bool) $owner->telegram_connected,
             ],
         ]);
     }
