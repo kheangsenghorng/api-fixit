@@ -409,5 +409,6 @@ Route::middleware([
         Route::post('/sync-group-id', [TelegramController::class, 'syncGroupId']);
         Route::get('/set-webhook', [TelegramController::class, 'setWebhook']);
         Route::get('/webhook-info', [TelegramController::class, 'webhookInfo']);
+        Route::get('/status', [TelegramController::class, 'status']);
     });
  });
